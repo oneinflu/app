@@ -5,11 +5,12 @@ import 'package:influnew/app_theme.dart';
 import 'package:influnew/aadhaar_verification_screen.dart';
 import 'package:influnew/pan_verification_screen.dart';
 import 'package:influnew/gst_verification_screen.dart';
+import 'package:influnew/widgets/pages/channel_creation_screen.dart';
 import 'package:influnew/widgets/pages/social_media_connection_screen.dart';
 
 class VerificationScreen extends StatefulWidget {
   final String? sourceScreen; // To track which benefit screen user came from
-  
+
   const VerificationScreen({super.key, this.sourceScreen});
 
   @override
@@ -56,7 +57,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
       context,
       MaterialPageRoute(builder: (context) => screen),
     );
-    
+
     // Refresh data when returning from verification screen
     if (mounted) {
       await _authProvider.getUserProfile(); // Refresh user profile from server
@@ -85,10 +86,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   bool _isFromBenefitScreen() {
-    return widget.sourceScreen == 'influencer' || 
-           widget.sourceScreen == 'partner' || 
-           widget.sourceScreen == 'channel' || 
-           widget.sourceScreen == 'store';
+    return widget.sourceScreen == 'influencer' ||
+        widget.sourceScreen == 'partner' ||
+        widget.sourceScreen == 'channel' ||
+        widget.sourceScreen == 'store';
   }
 
   @override
@@ -136,10 +137,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
               child: Column(
                 children: [
                   if (userType == 'Individual') ..._buildIndividualOptions(),
-                  if (userType == 'Organization') ..._buildOrganizationOptions(),
-                  
+                  if (userType == 'Organization')
+                    ..._buildOrganizationOptions(),
+
                   // Show social media connection button when fully verified and coming from benefit screens
-                  if (_isFullyVerified() && _isFromBenefitScreen()) ..._buildSocialMediaSection(),
+                  if (_isFullyVerified() && _isFromBenefitScreen())
+                    ..._buildSocialMediaSection(),
                 ],
               ),
             ),
@@ -171,11 +174,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         ),
         child: Column(
           children: [
-            const Icon(
-              Icons.check_circle,
-              color: Colors.green,
-              size: 48,
-            ),
+            const Icon(Icons.check_circle, color: Colors.green, size: 48),
             const SizedBox(height: 16),
             const Text(
               'Verification Complete!',
@@ -186,13 +185,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Now connect your social media accounts to showcase your reach to potential partners.',
+            Text(
+              widget.sourceScreen == 'channel'
+                  ? 'Now create your tutor profile to start teaching and earning.'
+                  : 'Now connect your social media accounts to showcase your reach to potential partners.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -200,20 +198,31 @@ class _VerificationScreenState extends State<VerificationScreen> {
               height: 50,
               child: ElevatedButton(
                 onPressed: () {
-                  // Determine sourceFlow based on sourceScreen
-                  String? sourceFlow;
-                  if (widget.sourceScreen == 'store') {
-                    sourceFlow = 'store_creation';
-                  }
-                  
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SocialMediaConnectionScreen(
-                        sourceFlow: sourceFlow,
+                  if (widget.sourceScreen == 'channel') {
+                    // Navigate directly to channel creation screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChannelCreationScreen(),
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    // Determine sourceFlow based on sourceScreen
+                    String? sourceFlow;
+                    if (widget.sourceScreen == 'store') {
+                      sourceFlow = 'store_creation';
+                    }
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => SocialMediaConnectionScreen(
+                              sourceFlow: sourceFlow,
+                            ),
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryPurple,
@@ -223,14 +232,24 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.link, size: 20),
-                    SizedBox(width: 8),
+                    Icon(
+                      widget.sourceScreen == 'channel'
+                          ? Icons.school
+                          : Icons.link,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
                     Text(
-                      'Connect Social Accounts',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      widget.sourceScreen == 'channel'
+                          ? 'Create Tutor Profile'
+                          : 'Connect Social Accounts',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -255,7 +274,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
         onTap:
             _isAadhaarVerified()
                 ? null
-                : () => _navigateToVerification(const AadhaarVerificationScreen()),
+                : () =>
+                    _navigateToVerification(const AadhaarVerificationScreen()),
       ),
       const SizedBox(height: 16),
       _buildVerificationCard(

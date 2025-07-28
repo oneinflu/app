@@ -12,6 +12,7 @@ import 'package:influnew/widgets/pages/store_benefits_screen.dart';
 import 'package:influnew/widgets/pages/store_creation_screen.dart';
 import 'package:influnew/widgets/pages/products_services_management_screen.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:influnew/widgets/pages/stores_screen.dart';
 import '../../app_theme.dart';
 import '../../home_screen.dart';
 import 'connected_accounts_screen.dart';
@@ -20,6 +21,7 @@ import 'earnings_screen.dart';
 import 'privacy_security_screen.dart';
 import 'rate_card_screen.dart';
 import 'wallet_screen.dart';
+import '../../verification_screen.dart';
 
 class ProfileManagementScreen extends StatefulWidget {
   const ProfileManagementScreen({Key? key}) : super(key: key);
@@ -34,15 +36,12 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
   final StoreProvider _storeProvider = Get.find<StoreProvider>();
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
-  List<Map<String, dynamic>> _stores = [];
-  List<Map<String, dynamic>> _channels =
-      []; // You'll need to implement channel provider
+  List<Map<String, dynamic>> _channels = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
-    _loadStores();
     _loadChannels();
   }
 
@@ -61,17 +60,6 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
       setState(() {
         _isLoading = false;
       });
-    }
-  }
-
-  Future<void> _loadStores() async {
-    try {
-      await _storeProvider.getStores();
-      setState(() {
-        _stores = _storeProvider.stores;
-      });
-    } catch (e) {
-      print('Error loading stores: $e');
     }
   }
 
@@ -123,384 +111,498 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: AppTheme.primaryPurple,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            );
-          },
-        ),
-        title: const Text(
-          'Profile Management',
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () {},
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF341969), // Updated background start color
+              Color(0xFF372065), // Updated background end color
+            ],
           ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          // Purple background for the header
-          Container(height: 220, color: AppTheme.primaryPurple),
-          // Profile header with image and name
-          _buildProfileHeader(),
-          // White container with rounded corners for content
-          Positioned(
-            top: 180,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: ListView(
-                children: [
-                  _buildSectionTitle('Manage Profiles'),
-                  // Influencer Profile - Navigate to benefits screen if not completed
-                  _buildProfileCard(
-                    title:
-                        _authProvider.hasCompletedInfluencerProfile
-                            ? 'Manage Influencer Profile'
-                            : 'Create Influencer Profile',
-                    subtitle:
-                        _authProvider.hasCompletedInfluencerProfile
-                            ? 'Update your influencer details and settings'
-                            : 'Set up your influencer profile to get started',
-                    icon: Icons.person_outline,
-                    onTap: () {
-                      if (_authProvider.hasCompletedInfluencerProfile) {
-                        // Navigate to display/manage screen
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    const InfluencerProfileDisplayScreen(),
-                          ),
-                        ).then((_) => _loadUserProfile()); // Refresh on return
-                      } else {
-                        // Navigate to benefits screen first
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PartnerBenefitsScreen(),
-                          ),
-                        ).then((_) => _loadUserProfile()); // Refresh on return
-                      }
-                    },
-                  ),
-                  // Store Profile - Navigate to benefits screen if no stores exist
-                  _buildProfileCard(
-                    title: _stores.isNotEmpty ? 'Manage Store' : 'Create Store',
-                    subtitle:
-                        _stores.isNotEmpty
-                            ? 'Manage your store details and products'
-                            : 'Set up your store to start selling',
-                    icon: Icons.store_outlined,
-                    onTap: () {
-                      if (_stores.isNotEmpty) {
-                        // Navigate to store management (ProductsServicesManagementScreen)
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => ProductsServicesManagementScreen(
-                                  storeId:
-                                      _stores
-                                          .first['_id'], // Use first store ID
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildHeader(),
+                _buildProfileSection(),
+                const SizedBox(height: 20),
+                // Remove the nested container and integrate sections directly
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      _buildSection('Influencer Related', [
+                        _buildMenuItem(
+                          'Manage Influencer Profile',
+                          Icons.person_outline,
+                          () {
+                            if (_authProvider.hasCompletedInfluencerProfile) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) =>
+                                          const InfluencerProfileDisplayScreen(),
                                 ),
-                          ),
-                        ).then((_) => _loadStores()); // Refresh on return
-                      } else {
-                        // Navigate to store benefits screen first
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const StoreBenefitsScreen(),
-                          ),
-                        ).then((_) => _loadStores()); // Refresh on return
-                      }
-                    },
-                  ),
-                  // Channel Profile - Navigate to benefits screen if no channels exist
-                  _buildProfileCard(
-                    title:
-                        _channels.isNotEmpty
-                            ? 'Manage Channel'
-                            : 'Create Channel',
-                    subtitle:
-                        _channels.isNotEmpty
-                            ? 'Manage your channel details and courses'
-                            : 'Set up your channel to start teaching',
-                    icon: Icons.video_library_outlined,
-                    onTap: () {
-                      if (_channels.isNotEmpty) {
-                        // TODO: Navigate to channel management screen when available
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Channel management coming soon!'),
-                          ),
-                        );
-                      } else {
-                        // Navigate to channel benefits screen first
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChannelBenefitsScreen(),
-                          ),
-                        ).then((_) => _loadChannels()); // Refresh on return
-                      }
-                    },
-                  ),
-
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('Monetization'),
-                  // Rate Cards - Disabled until influencer profile is created
-                  _buildProfileCard(
-                    title: 'Rate Cards',
-                    subtitle:
-                        _authProvider.hasCompletedInfluencerProfile
-                            ? 'Set your pricing for different services'
-                            : 'Complete your influencer profile first',
-                    icon: Icons.attach_money_outlined,
-                    isDisabled: !_authProvider.hasCompletedInfluencerProfile,
-                    onTap: () {
-                      if (_authProvider.hasCompletedInfluencerProfile) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => const RateCardsManagementScreen(),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Please complete your influencer profile first to access rate cards.',
+                              ).then((_) => _loadUserProfile());
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) =>
+                                          const PartnerBenefitsScreen(),
+                                ),
+                              ).then((_) => _loadUserProfile());
+                            }
+                          },
+                        ),
+                        _buildMenuItem('Your Rate Cards', Icons.credit_card, () {
+                          if (_authProvider.hasCompletedInfluencerProfile) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
+                                        const RateCardsManagementScreen(),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Please complete your influencer profile first to access rate cards.',
+                                ),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                        }),
+                        _buildMenuItem('Manage Time-Slots', Icons.schedule, () {
+                          // TODO: Navigate to time slots management
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Time slots management coming soon!',
+                              ),
                             ),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  _buildProfileCard(
-                    title: 'Earnings',
-                    subtitle: 'Track your earnings and payment history',
-                    icon: Icons.account_balance_wallet_outlined,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const EarningsScreen(),
+                          );
+                        }),
+                        _buildMenuItem('Invite Followers', Icons.group_add, () {
+                          // TODO: Navigate to invite followers
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Invite followers feature coming soon!',
+                              ),
+                            ),
+                          );
+                        }),
+                      ]),
+                      const SizedBox(height: 20),
+                      _buildSection('Store Related', [
+                        _buildMenuItem('View All Stores', Icons.store, () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => StoresScreen(),
+                            ),
+                          ).then((_) => _loadUserProfile());
+                        }),
+                        _buildMenuItem(
+                          'Frequently Asked Questions',
+                          Icons.help_outline,
+                          () {
+                            // TODO: Navigate to FAQ
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('FAQ section coming soon!'),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-                  _buildProfileCard(
-                    title: 'Wallet',
-                    subtitle: 'Manage your wallet and transaction history',
-                    icon: Icons.wallet,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const WalletScreen(),
+                      ]),
+                      const SizedBox(height: 20),
+                      _buildSection('Channel Related', [
+                        _buildMenuItem('View All Channels', Icons.tv, () {
+                          // TODO: Navigate to channels list
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Channels list coming soon!'),
+                            ),
+                          );
+                        }),
+                        _buildMenuItem('Channel Benefits', Icons.star, () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => const ChannelBenefitsScreen(),
+                            ),
+                          );
+                        }),
+                      ]),
+                      const SizedBox(height: 20),
+                      _buildSection('More', [
+                        _buildMenuItem(
+                          'Manage Social Accounts',
+                          Icons.share,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
+                                        const ConnectedAccountsScreen(),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('Account'),
-                  _buildProfileCard(
-                    title: 'KYC Details',
-                    subtitle: 'View and update your verification details',
-                    icon: Icons.verified_user_outlined,
-                    onTap: () {},
-                  ),
-                  _buildProfileCard(
-                    title: 'Connected Accounts',
-                    subtitle: 'Manage your connected social media accounts',
-                    icon: Icons.link_outlined,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ConnectedAccountsScreen(),
+                        _buildMenuItem(
+                          'Manage Payment Methods',
+                          Icons.payment,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const WalletScreen(),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
+                        _buildMenuItem('About', Icons.info_outline, () {
+                          // TODO: Navigate to about page
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('About page coming soon!'),
+                            ),
+                          );
+                        }),
+                        _buildMenuItem('Help', Icons.help, () {
+                          // TODO: Navigate to help page
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Help page coming soon!'),
+                            ),
+                          );
+                        }),
+                        _buildMenuItem('Logout', Icons.logout, () {
+                          _showLogoutConfirmationDialog();
+                        }),
+                      ]),
+                      const SizedBox(height: 20),
+                    ],
                   ),
-                  _buildProfileCard(
-                    title: 'Privacy & Security',
-                    subtitle: 'Manage your account security settings',
-                    icon: Icons.security_outlined,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PrivacySecurityScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Add this new logout card
-                  _buildProfileCard(
-                    title: 'Logout',
-                    subtitle: 'Sign out from your account',
-                    icon: Icons.logout,
-                    onTap: () {
-                      _showLogoutConfirmationDialog();
-                    },
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+              );
+            },
+            child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrivacySecurityScreen(),
+                ),
+              );
+            },
+            child: const Icon(Icons.edit, color: Colors.white, size: 24),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProfileHeader() {
-    return Container(
-      padding: const EdgeInsets.only(bottom: 40),
-      decoration: const BoxDecoration(color: AppTheme.primaryPurple),
-      child: Column(
-        children: [
-          const SizedBox(height: 16),
-          // Profile image with edit button
-          Stack(
-            children: [
-              Obx(() {
-                final userData = _authProvider.user.value;
-                final profileUrl =
-                    userData != null ? userData['profileURL'] : null;
-
-                return Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3),
-                    image:
-                        profileUrl != null
-                            ? DecorationImage(
-                              image: NetworkImage(profileUrl),
-                              fit: BoxFit.cover,
-                            )
-                            : const DecorationImage(
-                              image: AssetImage('assets/images/bksaraf.png'),
-                              fit: BoxFit.cover,
-                            ),
-                  ),
-                  child:
-                      _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : null,
-                );
-              }),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: _updateProfilePicture,
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 3,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.edit,
-                      color: AppTheme.primaryPurple,
-                      size: 18,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // User name with verified badge
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: Obx(() {
+  Widget _buildProfileSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF210E47), // Updated to match other cards
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                Obx(() {
                   final userData = _authProvider.user.value;
-                  final name = userData != null ? userData['name'] : 'User';
-              
-                  return Text(
-                    name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  final profileUrl =
+                      userData != null ? userData['profileURL'] : null;
+
+                  return Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      image:
+                          profileUrl != null
+                              ? DecorationImage(
+                                image: NetworkImage(profileUrl),
+                                fit: BoxFit.cover,
+                              )
+                              : const DecorationImage(
+                                image: AssetImage('assets/images/bksaraf.png'),
+                                fit: BoxFit.cover,
+                              ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
+                    child:
+                        _isLoading
+                            ? const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            )
+                            : null,
                   );
                 }),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.verified, color: Colors.white, size: 14),
-                    SizedBox(width: 4),
-                    Text(
-                      'Verified',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: _updateProfilePicture,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        size: 12,
+                        color: Color(0xFF2D1B69),
+                      ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // User email
-          Obx(() {
-            final userData = _authProvider.user.value;
-            final email =
-                userData != null ? userData['email'] : 'user@example.com';
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Obx(() {
+                    final userData = _authProvider.user.value;
+                    final name =
+                        userData != null
+                            ? (userData['name'] ?? 'User')
+                            : 'User';
+                    return Text(
+                      name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  }),
+                  const SizedBox(height: 4),
+                  Obx(() {
+                    final userData = _authProvider.user.value;
+                    final email =
+                        userData != null
+                            ? (userData['email'] ?? 'user@example.com')
+                            : 'user@example.com';
+                    return Text(
+                      email,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  }),
+                  const SizedBox(height: 8),
+                  Obx(() {
+                    final userData = _authProvider.user.value;
+                    final userType = userData?['userType'];
+                    final kycData = userData?['kyc'];
 
-            return Text(
-              email,
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    // Check verification status based on user type (same logic as homepage)
+                    bool isFullyVerified = false;
+                    if (userType == 'Individual') {
+                      // For individuals: Aadhaar + PAN
+                      final isAadhaarVerified =
+                          kycData?['aadhaar']?['isVerified'] == true;
+                      final isPanVerified =
+                          kycData?['pan']?['isVerified'] == true;
+                      isFullyVerified = isAadhaarVerified && isPanVerified;
+                    } else if (userType == 'Organization') {
+                      // For organizations: GST + PAN
+                      final isGstVerified =
+                          kycData?['gst']?['isVerified'] == true;
+                      final isPanVerified =
+                          kycData?['pan']?['isVerified'] == true;
+                      isFullyVerified = isGstVerified && isPanVerified;
+                    }
+
+                    return GestureDetector(
+                      onTap: () {
+                        if (!isFullyVerified) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const VerificationScreen(),
+                            ),
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isFullyVerified ? Colors.green : Colors.orange,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isFullyVerified ? Icons.verified : Icons.warning,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isFullyVerified
+                                  ? 'KYC Verified'
+                                  : 'Get KYC Verified',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
+                            if (!isFullyVerified) ...[
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_forward,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSection(String title, List<Widget> items) {
+    Color getBarColor(String title) {
+      switch (title) {
+        case 'Influencer Related':
+          return const Color.fromARGB(255, 142, 45, 246); // Green
+        case 'Store Related':
+          return const Color.fromARGB(255, 142, 45, 246); // Blue
+        case 'Channel Related':
+          return const Color.fromARGB(255, 142, 45, 246); // Orange
+        case 'More':
+          return const Color.fromARGB(255, 142, 45, 246); // Red
+        default:
+          return const Color.fromARGB(255, 142, 45, 246); // Purple
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF210E47), // Updated card background color
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title section with highlighting bar
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Highlighting bar
+                Container(
+                  width: 4,
+                  height: 32, // Reduced height from 56 to 32
+                  decoration: BoxDecoration(
+                    color: getBarColor(title),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                    ),
+                  ),
+                ),
+                // Title
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Menu items with dividers
+          ...List.generate(items.length, (index) {
+            return Column(
+              children: [
+                items[index],
+                if (index <
+                    items.length - 1) // Add divider except for last item
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    height: 1,
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+              ],
             );
           }),
         ],
@@ -508,81 +610,35 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: AppTheme.primaryPurple,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required VoidCallback onTap,
-    bool isDisabled = false,
-  }) {
+  Widget _buildMenuItem(String title, IconData icon, VoidCallback onTap) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color:
-            isDisabled
-                ? Colors.grey.withOpacity(0.1)
-                : AppTheme.primaryPurple.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      margin: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ), // Reduced horizontal margin
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color:
-                isDisabled
-                    ? Colors.grey.withOpacity(0.2)
-                    : AppTheme.primaryPurple.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: isDisabled ? Colors.grey : AppTheme.primaryPurple,
-          ),
-        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 8,
+        ), // Reduced horizontal padding
+        leading: Icon(icon, color: Colors.white70, size: 24),
         title: Text(
           title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isDisabled ? Colors.grey : Colors.black,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
           ),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            color: isDisabled ? Colors.grey : Colors.grey.shade600,
-            fontSize: 12,
-          ),
-        ),
-        trailing: Icon(
+        trailing: const Icon(
           Icons.arrow_forward_ios,
+          color: Colors.white54,
           size: 16,
-          color: isDisabled ? Colors.grey : Colors.black54,
         ),
-        onTap: isDisabled ? null : onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        onTap: onTap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        hoverColor: Colors.white.withOpacity(0.1),
+        splashColor: Colors.white.withOpacity(0.2),
       ),
     );
   }
@@ -592,18 +648,25 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Logout'),
-          content: const Text('Are you sure you want to logout?'),
+          backgroundColor: const Color(0xFF2D1B69),
+          title: const Text('Logout', style: TextStyle(color: Colors.white)),
+          content: const Text(
+            'Are you sure you want to logout?',
+            style: TextStyle(color: Colors.white70),
+          ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
-              child: const Text('Cancel'),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70),
+              ),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
                 _performLogout();
               },
               child: const Text('Logout', style: TextStyle(color: Colors.red)),
@@ -615,13 +678,8 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
   }
 
   void _performLogout() async {
-    // Get the AuthProvider instance
     final authProvider = Get.find<AuthProvider>();
-
-    // Call the logout method
     await authProvider.logout();
-
-    // Navigate to welcome or login screen
     Navigator.of(context).pushNamedAndRemoveUntil('/welcome', (route) => false);
   }
 }
