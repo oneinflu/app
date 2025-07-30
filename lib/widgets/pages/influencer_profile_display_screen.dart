@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:influnew/widgets/pages/share_profile_screen.dart';
 import '../../app_theme.dart';
 import '../../services/api_service.dart';
 import '../../providers/auth_provider.dart';
 import 'influencer_profile_setup_screen.dart';
 import 'rate_cards_management_screen.dart';
+import 'connected_accounts_screen.dart';
+import 'package:reels_viewer/reels_viewer.dart';
+import '../../models/custom_reel_model.dart';
+import 'dart:math' as math;
 
 class InfluencerProfileDisplayScreen extends StatefulWidget {
   const InfluencerProfileDisplayScreen({Key? key}) : super(key: key);
@@ -19,20 +24,29 @@ class _InfluencerProfileDisplayScreenState
     with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
   final AuthProvider _authProvider = Get.find<AuthProvider>();
-
   late TabController _tabController;
+
   Map<String, dynamic>? _influencerProfile;
   List<dynamic> _rateCards = [];
+  Map<String, dynamic>? _socialMediaConnections;
   bool _isLoading = true;
   String? _error;
-  String _selectedPlatform = 'All';
-  List<String> _availablePlatforms = ['All'];
+
+  // Sample data for reels
+  final List<String> _unsplashImages = [
+    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000',
+    'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=1000',
+    'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1000',
+    'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1000',
+    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000',
+    'https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=1000',
+  ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadInfluencerProfile();
+    _loadInfluencerData();
   }
 
   @override
@@ -41,25 +55,40 @@ class _InfluencerProfileDisplayScreenState
     super.dispose();
   }
 
-  Future<void> _loadInfluencerProfile() async {
+  Future<void> _loadInfluencerData() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final response = await _apiService.getInfluencerProfile();
+      // Load influencer profile
+      final profileResponse = await _apiService.getInfluencerProfile();
 
-      if (response.success && response.data != null) {
+      // Load social media connections
+      final socialResponse = await _apiService.getSocialMediaConnections();
+
+      // Load rate cards
+      final rateCardsResponse = await _apiService.getRateCards();
+
+      if (profileResponse.success && profileResponse.data != null) {
         setState(() {
-          _influencerProfile = response.data!['influencerProfile'];
+          _influencerProfile = profileResponse.data!['influencerProfile'];
           _rateCards = _influencerProfile?['rateCards'] ?? [];
-          _updateAvailablePlatforms();
+
+          if (socialResponse.success && socialResponse.data != null) {
+            _socialMediaConnections = socialResponse.data;
+          }
+
+          if (rateCardsResponse.success && rateCardsResponse.data != null) {
+            _rateCards = rateCardsResponse.data!['rateCards'] ?? _rateCards;
+          }
+
           _isLoading = false;
         });
       } else {
         setState(() {
-          _error = response.message ?? 'Failed to load profile';
+          _error = profileResponse.message ?? 'Failed to load profile';
           _isLoading = false;
         });
       }
@@ -71,33 +100,10 @@ class _InfluencerProfileDisplayScreenState
     }
   }
 
-  void _updateAvailablePlatforms() {
-    final platforms =
-        _rateCards
-            .map((card) => card['platform'] as String? ?? 'Other')
-            .toSet()
-            .toList();
-    platforms.sort();
-    _availablePlatforms = ['All', ...platforms];
-
-    if (!_availablePlatforms.contains(_selectedPlatform)) {
-      _selectedPlatform = 'All';
-    }
-  }
-
-  List<dynamic> get _filteredRateCards {
-    if (_selectedPlatform == 'All') {
-      return _rateCards;
-    }
-    return _rateCards
-        .where((card) => card['platform'] == _selectedPlatform)
-        .toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -105,45 +111,142 @@ class _InfluencerProfileDisplayScreenState
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Influencer Profile',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: AppTheme.primaryPurple),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const InfluencerProfileSetupScreen(),
-                ),
-              ).then((_) => _loadInfluencerProfile());
-            },
+          TextButton(
+            onPressed: () {},
+            child: const Text(
+              'Help?',
+              style: TextStyle(color: Colors.black, fontSize: 16),
+            ),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppTheme.primaryPurple,
-          labelColor: AppTheme.primaryPurple,
-          unselectedLabelColor: Colors.grey[600],
-          labelStyle: const TextStyle(fontWeight: FontWeight.w600),
-          tabs: const [Tab(text: 'Profile Info'), Tab(text: 'Rate Cards')],
-        ),
       ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _error != null
-              ? _buildErrorState()
-              : TabBarView(
-                controller: _tabController,
-                children: [_buildProfileInfoTab(), _buildRateCardsTab()],
+              : Column(
+                children: [
+                  _buildProfileHeader(),
+                  const SizedBox(height: 16),
+                  // Tab Bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                      ),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      labelColor: AppTheme.primaryPurple,
+                      unselectedLabelColor: Colors.grey,
+                      indicatorColor: AppTheme.primaryPurple,
+                      tabs: const [
+                        Tab(icon: Icon(Icons.person)),
+                        Tab(icon: Icon(Icons.video_library)),
+                      ],
+                    ),
+                  ),
+                  // Tab Bar View
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // First Tab - Profile Content
+                        SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildAboutSection(),
+                              const SizedBox(height: 24),
+                              _buildConnectedSocialMedia(),
+                              const SizedBox(height: 24),
+                              _buildRateCards(),
+                              const SizedBox(height: 24),
+                              _buildManagedBySection(),
+                            ],
+                          ),
+                        ),
+                        // Second Tab - Reels Interface
+                        _buildReelsInterface(),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+    );
+  }
+
+  // New method to build the reels interface
+  Widget _buildReelsInterface() {
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.8,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: _unsplashImages.length,
+      itemBuilder: (context, index) {
+        // Generate random order count between 5-50
+        final random = math.Random();
+        final orderCount = random.nextInt(46) + 5; // 5 to 50
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            // Image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(_unsplashImages[index], fit: BoxFit.cover),
+            ),
+            // Overlay
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                ),
+              ),
+            ),
+            // Shopping bag icon with order count
+            Positioned(
+              left: 8,
+              bottom: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.shopping_bag,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$orderCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -152,25 +255,25 @@ class _InfluencerProfileDisplayScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 80, color: Colors.grey[400]),
+          const Icon(Icons.error_outline, size: 80, color: Color(0xFF9E9E9E)),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'Error Loading Profile',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: Color(0xFF757575),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             _error!,
-            style: TextStyle(color: Colors.grey[500]),
+            style: const TextStyle(color: Color(0xFF9E9E9E)),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: _loadInfluencerProfile,
+            onPressed: _loadInfluencerData,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryPurple,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
@@ -191,372 +294,348 @@ class _InfluencerProfileDisplayScreenState
     );
   }
 
-  Widget _buildProfileInfoTab() {
-    if (_influencerProfile == null) {
-      return const Center(child: Text('No profile data available'));
-    }
+  Widget _buildProfileHeader() {
+    final userData = _authProvider.user.value;
+    final username =
+        userData?['username'] ??
+        'username'; // Changed from 'name' to 'username'
+    final profileUrl = userData?['profileURL'];
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Profile Header Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primaryPurple,
-                  AppTheme.primaryPurple.withOpacity(0.8),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryPurple.withOpacity(0.3),
-                  spreadRadius: 1,
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.white,
-                  child: Text(
-                    _authProvider.user.value?['name']
-                            ?.substring(0, 1)
-                            .toUpperCase() ??
-                        'U',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryPurple,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _authProvider.user.value?['name'] ?? 'User',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    _influencerProfile!['isActive'] ? 'Active' : 'Inactive',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+    // Add the missing variable declarations with safe type conversion
+    final followersCount =
+        _influencerProfile?['followersCount']?.toString() ?? '980';
+    final followingCount =
+        _influencerProfile?['followingCount']?.toString() ?? '81';
+    final dealsCount = _influencerProfile?['dealsCount']?.toString() ?? '10';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-
-          const SizedBox(height: 24),
-
-          // Stats Row
+        ],
+      ),
+      child: Column(
+        children: [
           Row(
             children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Total Followers',
-                  _formatNumber(_influencerProfile!['totalFollowers'] ?? 0),
-                  Icons.people,
-                ),
+              CircleAvatar(
+                radius: 40,
+                backgroundImage:
+                    profileUrl != null
+                        ? NetworkImage(profileUrl)
+                        : const AssetImage('assets/images/bksaraf.png')
+                            as ImageProvider,
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildStatCard(
-                  'Avg Engagement',
-                  '${_influencerProfile!['avgEngagementRate'] ?? 0}%',
-                  Icons.trending_up,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      username, // Changed from 'name' to 'username'
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildStatItem(followersCount, 'Followers'),
+                        const SizedBox(width: 24),
+                        _buildStatItem(followingCount, 'Following'),
+                        const SizedBox(width: 24),
+                        _buildStatItem(dealsCount, 'Deals'),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 24),
-
-          // Bio Section
-          _buildInfoCard(
-            'Bio',
-            _influencerProfile!['bio'] ?? 'No bio available',
-            Icons.person,
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ShareProfileScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryPurple,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Share Profile',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => const InfluencerProfileSetupScreen(),
+                      ),
+                    ).then((_) => _loadInfluencerData());
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                    side: const BorderSide(color: Colors.grey),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Manage Profile',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
           ),
-
-          const SizedBox(height: 16),
-
-          // Categories Section
-          _buildInfoCard(
-            'Categories',
-            (_influencerProfile!['categories'] as List?)?.join(', ') ??
-                'No categories',
-            Icons.category,
-          ),
-
-          const SizedBox(height: 16),
-
-          // Platforms Section
-          _buildInfoCard(
-            'Platforms',
-            (_influencerProfile!['platforms'] as List?)?.join(', ') ??
-                'No platforms',
-            Icons.social_distance,
-          ),
-
-          const SizedBox(height: 16),
-
-          // Brands Worked With
-          if (_influencerProfile!['brandsWorkedWith'] != null &&
-              (_influencerProfile!['brandsWorkedWith'] as List).isNotEmpty)
-            _buildInfoCard(
-              'Brands Worked With',
-              (_influencerProfile!['brandsWorkedWith'] as List).join(', '),
-              Icons.business,
-            ),
-
-          const SizedBox(height: 16),
-
-          // Media Kit URL
-          if (_influencerProfile!['mediaKitUrl'] != null &&
-              _influencerProfile!['mediaKitUrl'].toString().isNotEmpty)
-            _buildInfoCard(
-              'Media Kit',
-              _influencerProfile!['mediaKitUrl'],
-              Icons.link,
-              isLink: true,
-            ),
         ],
       ),
     );
   }
 
-  Widget _buildRateCardsTab() {
+  Widget _buildStatItem(String count, String label) {
     return Column(
       children: [
-        // Platform Navigation Pills
-        if (_availablePlatforms.length > 1) _buildPlatformTabs(),
-        // Content
-        Expanded(
-          child:
-              _filteredRateCards.isEmpty
-                  ? _buildEmptyRateCardsState()
-                  : _buildRateCardsList(),
+        Text(
+          count,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(
+              0xFF757575,
+            ), // Direct color instead of Colors.grey[600]
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildPlatformTabs() {
+  Widget _buildAboutSection() {
+    final bio =
+        _influencerProfile?['bio'] ??
+        'Content Creator | Brand Collaborator | Lifestyle';
+    final location =
+        _influencerProfile?['location'] ?? 'Based in Hyderabad, India';
+    final description =
+        _influencerProfile?['description'] ??
+        'Sharing daily inspiration in fashion, wellness, tech';
+
+    // Fix: Handle both List and String types for brandsWorkedWith
+    final brandsData = _influencerProfile?['brandsWorkedWith'];
+    List<String> brands;
+
+    if (brandsData is List) {
+      brands = brandsData.cast<String>();
+    } else if (brandsData is String) {
+      brands = [brandsData];
+    } else {
+      brands = ['Nike', 'Adidas', 'Nykaa'];
+    }
+
     return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _availablePlatforms.length,
-        itemBuilder: (context, index) {
-          final platform = _availablePlatforms[index];
-          final isSelected = platform == _selectedPlatform;
-          final count =
-              platform == 'All'
-                  ? _rateCards.length
-                  : _rateCards
-                      .where((card) => card['platform'] == platform)
-                      .length;
-
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedPlatform = platform;
-              });
-            },
-            child: Container(
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryPurple : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color:
-                      isSelected ? AppTheme.primaryPurple : Colors.grey[300]!,
-                  width: 1,
-                ),
-                boxShadow:
-                    isSelected
-                        ? [
-                          BoxShadow(
-                            color: AppTheme.primaryPurple.withOpacity(0.3),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                        : null,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    platform,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.grey[700],
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                  ),
-                  if (count > 0) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            isSelected
-                                ? Colors.white.withOpacity(0.2)
-                                : AppTheme.primaryPurple.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        count.toString(),
-                        style: TextStyle(
-                          color:
-                              isSelected
-                                  ? Colors.white
-                                  : AppTheme.primaryPurple,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildEmptyRateCardsState() {
-    final isFilteredEmpty =
-        _selectedPlatform != 'All' && _filteredRateCards.isEmpty;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            isFilteredEmpty
-                ? Icons.filter_list_off
-                : Icons.credit_card_outlined,
-            size: 80,
-            color: Colors.grey[400],
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(height: 16),
-          Text(
-            isFilteredEmpty
-                ? 'No Rate Cards for $_selectedPlatform'
-                : 'No Rate Cards Yet',
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'About',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: Colors.black,
             ),
+          ),
+          const SizedBox(height: 12),
+          Text(bio, style: const TextStyle(fontSize: 14, color: Colors.black)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.location_on, size: 16, color: Colors.grey),
+              const SizedBox(width: 4),
+              Text(
+                location,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF757575)),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(
-            isFilteredEmpty
-                ? 'Create a rate card for $_selectedPlatform\nto start receiving collaboration requests'
-                : 'Create your first rate card to start\nreceiving collaboration requests',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+            description,
+            style: const TextStyle(fontSize: 14, color: Colors.black),
           ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const RateCardsManagementScreen(),
-                ),
-              ).then((_) => _loadInfluencerProfile());
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryPurple,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.business, size: 16, color: Colors.grey),
+              const SizedBox(width: 4),
+              Text(
+                'Collaborated with: ${brands.take(3).join(', ')}${brands.length > 3 ? ' many more...' : ''}',
+                style: const TextStyle(fontSize: 14, color: Color(0xFF757575)),
               ),
-            ),
-            child: Text(
-              isFilteredEmpty
-                  ? 'Create Rate Card for $_selectedPlatform'
-                  : 'Create Rate Card',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRateCardsList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _filteredRateCards.length,
-      itemBuilder: (context, index) {
-        final rateCard = _filteredRateCards[index];
-        return _buildRateCardItem(rateCard);
+  Widget _buildConnectedSocialMedia() {
+    final socialAccounts = [
+      {
+        'platform': 'Instagram',
+        'username': 'shannu.jashwanthi',
+        'icon': Icons.camera_alt,
+        'color': Colors.pink,
+        'connected': true,
       },
-    );
-  }
+      {
+        'platform': 'Facebook',
+        'username': 'Shannu',
+        'icon': Icons.facebook,
+        'color': Colors.blue,
+        'connected': true,
+      },
+      {
+        'platform': 'YouTube',
+        'username': 'Shannnu.channel',
+        'icon': Icons.play_circle_fill,
+        'color': Colors.red,
+        'connected': true,
+      },
+    ];
 
-  Widget _buildInfoCard(
-    String title,
-    String content,
-    IconData icon, {
-    bool isLink = false,
-  }) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
-            blurRadius: 4,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Connected Social Media',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...socialAccounts.map((account) => _buildSocialMediaItem(account)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSocialMediaItem(Map<String, dynamic> account) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: account['color'].withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(account['icon'], color: account['color'], size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              account['username'],
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          Switch(
+            value: account['connected'],
+            onChanged: (value) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ConnectedAccountsScreen(),
+                ),
+              );
+            },
+            activeColor: AppTheme.primaryPurple,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRateCards() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -565,240 +644,213 @@ class _InfluencerProfileDisplayScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, size: 20, color: AppTheme.primaryPurple),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
+              const Text(
+                'Rate Cards',
+                style: TextStyle(
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryPurple,
+                  color: Colors.black,
                 ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RateCardsManagementScreen(),
+                    ),
+                  ).then((_) => _loadInfluencerData());
+                },
+                child: const Text('Manage'),
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          // Updated to horizontal scrollable list
+          SizedBox(
+            height: 32,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildPlatformChip('All Platforms', true),
+                const SizedBox(width: 8),
+                _buildPlatformChip('Youtube', false),
+                const SizedBox(width: 8),
+                _buildPlatformChip('Facebook', false),
+                const SizedBox(width: 8),
+                _buildPlatformChip('Instagram', false),
+                const SizedBox(width: 8),
+                _buildPlatformChip('Twitter', false),
+                const SizedBox(width: 8),
+                _buildPlatformChip('LinkedIn', false),
+                const SizedBox(width: 8),
+                _buildPlatformChip('TikTok', false),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildRateCardItem(
+            'Story (1-3 Frames)',
+            '₹5,000',
+            '24-hour story with swipe-up/mention',
+            'Delivery: 3-5 working days after brief/product received',
+            [Icons.camera_alt, Icons.facebook, Icons.play_circle_fill],
+          ),
           const SizedBox(height: 12),
-          Text(
-            content,
-            style: TextStyle(
-              fontSize: 16,
-              color: isLink ? Colors.blue : Colors.grey[800],
-              decoration: isLink ? TextDecoration.underline : null,
-            ),
+          _buildRateCardItem(
+            'Giveaway Collaboration',
+            '₹18,000',
+            '1 post + story + coordination',
+            'Delivery: 4-5 working days after brief/product received',
+            [Icons.camera_alt, Icons.facebook, Icons.play_circle_fill],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon) {
+  Widget _buildPlatformChip(String label, bool isSelected) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: isSelected ? AppTheme.primaryPurple : const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        children: [
-          Icon(icon, size: 24, color: AppTheme.primaryPurple),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primaryPurple,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRateCardItem(Map<String, dynamic> rateCard) {
-    final price = rateCard['price'] ?? {};
-    final amount = price['amount'] ?? 0;
-    final currency = price['currency'] ?? 'INR';
-    final negotiable = price['negotiable'] ?? false;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryPurple.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              rateCard['platform'] ?? '',
-                              style: const TextStyle(
-                                color: AppTheme.primaryPurple,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              rateCard['contentType'] ?? '',
-                              style: const TextStyle(
-                                color: Colors.orange,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (rateCard['description'] != null &&
-                          rateCard['description'].toString().isNotEmpty)
-                        Text(
-                          rateCard['description'],
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit,
-                    size: 20,
-                    color: AppTheme.primaryPurple,
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RateCardsManagementScreen(),
-                      ),
-                    ).then((_) => _loadInfluencerProfile());
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      '$currency $amount',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryPurple,
-                      ),
-                    ),
-                    if (negotiable)
-                      Container(
-                        margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'Negotiable',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                Text(
-                  'Created: ${_formatDate(rateCard['createdAt'])}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
-              ],
-            ),
-          ],
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: isSelected ? Colors.white : const Color(0xFF757575),
         ),
       ),
     );
   }
 
-  String _formatNumber(int number) {
-    if (number >= 1000000) {
-      return '${(number / 1000000).toStringAsFixed(1)}M';
-    } else if (number >= 1000) {
-      return '${(number / 1000).toStringAsFixed(1)}K';
-    }
-    return number.toString();
+  Widget _buildRateCardItem(
+    String title,
+    String price,
+    String description,
+    String delivery,
+    List<IconData> platforms,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.edit, size: 20),
+                color: const Color(0xFF757575),
+              ),
+            ],
+          ),
+          Text(
+            price,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: const TextStyle(fontSize: 14, color: Color(0xFF616161)),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            delivery,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children:
+                platforms
+                    .map(
+                      (icon) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Icon(
+                          icon,
+                          size: 16,
+                          color: const Color(0xFF757575),
+                        ),
+                      ),
+                    )
+                    .toList(),
+          ),
+        ],
+      ),
+    );
   }
 
-  String _formatDate(String? dateString) {
-    if (dateString == null) return 'Unknown';
-    try {
-      final date = DateTime.parse(dateString);
-      return '${date.day}/${date.month}/${date.year}';
-    } catch (e) {
-      return 'Unknown';
-    }
+  Widget _buildManagedBySection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Managed By',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: const Color(0xFFE0E0E0),
+                child: const Icon(Icons.person, color: Colors.grey, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Self Managed',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

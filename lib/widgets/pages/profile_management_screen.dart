@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:influnew/providers/auth_provider.dart';
 import 'package:influnew/providers/store_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:influnew/widgets/pages/available_slots_management_screen.dart';
 import 'package:influnew/widgets/pages/channel_benefits_screen.dart';
 import 'package:influnew/widgets/pages/channel_creation_screen.dart';
 import 'package:influnew/widgets/pages/influencer_profile_display_screen.dart';
@@ -182,12 +183,12 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                           }
                         }),
                         _buildMenuItem('Manage Time-Slots', Icons.schedule, () {
-                          // TODO: Navigate to time slots management
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Time slots management coming soon!',
-                              ),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      const AvailableSlotsManagementScreen(),
                             ),
                           );
                         }),

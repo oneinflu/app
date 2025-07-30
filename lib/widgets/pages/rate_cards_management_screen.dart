@@ -17,15 +17,39 @@ class _RateCardsManagementScreenState extends State<RateCardsManagementScreen> {
   final ApiService _apiService = ApiService();
   final AuthProvider _authProvider = Get.find<AuthProvider>();
 
-  List<Map<String, dynamic>> _rateCards = [];
-  bool _isLoading = true;
-  String _selectedPlatform = 'All';
-  List<String> _availablePlatforms = ['All'];
+  List<Map<String, dynamic>> _rateCards = [
+    {
+      'title': 'Story (1-3 Frames)',
+      'price': {'amount': 5000, 'currency': '₹', 'negotiable': true},
+      'description': '24-hour story with swipe-up/mention',
+      'delivery': '3-5 working days after brief/product \n received',
+      'platforms': ['Instagram', 'Facebook', 'YouTube'],
+      'platform': 'All Platforms',
+    },
+    {
+      'title': 'Giveaway Collaboration',
+      'price': {'amount': 18000, 'currency': '₹', 'negotiable': true},
+      'description': '1 post + story + coordination',
+      'delivery': '4-5 working days after brief/product \n received',
+      'platforms': ['Instagram', 'Facebook', 'YouTube'],
+      'platform': 'All Platforms',
+    },
+  ];
+
+  bool _isLoading = false;
+  String _selectedPlatform = 'All Platforms';
+  List<String> _availablePlatforms = [
+    'All Platforms',
+    'Youtube',
+    'Facebook',
+    'Instagram',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _loadRateCards();
+    // Uncomment this when API is ready
+    // _loadRateCards();
   }
 
   Future<void> _loadRateCards() async {
@@ -62,20 +86,25 @@ class _RateCardsManagementScreenState extends State<RateCardsManagementScreen> {
     final platforms =
         _rateCards.map((card) => card['platform'] as String).toSet().toList();
     platforms.sort();
-    _availablePlatforms = ['All', ...platforms];
+    _availablePlatforms = ['All Platforms', ...platforms];
 
     // Reset selected platform if it's no longer available
     if (!_availablePlatforms.contains(_selectedPlatform)) {
-      _selectedPlatform = 'All';
+      _selectedPlatform = 'All Platforms';
     }
   }
 
   List<Map<String, dynamic>> get _filteredRateCards {
-    if (_selectedPlatform == 'All') {
+    if (_selectedPlatform == 'All Platforms') {
       return _rateCards;
     }
     return _rateCards
-        .where((card) => card['platform'] == _selectedPlatform)
+        .where(
+          (card) =>
+              card['platform'] == _selectedPlatform ||
+              (card['platforms'] != null &&
+                  card['platforms'].contains(_selectedPlatform)),
+        )
         .toList();
   }
 
@@ -122,6 +151,27 @@ class _RateCardsManagementScreenState extends State<RateCardsManagementScreen> {
             Get.offAll(() => const HomeScreen());
           },
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: IconButton(
+                icon: const Text(
+                  'Add +',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onPressed: () => _showAddRateCardBottomSheet(),
+              ),
+            ),
+          ),
+        ],
       ),
       body:
           _isLoading
@@ -129,7 +179,7 @@ class _RateCardsManagementScreenState extends State<RateCardsManagementScreen> {
               : Column(
                 children: [
                   // Platform Navigation Pills
-                  if (_availablePlatforms.length > 1) _buildPlatformTabs(),
+                  _buildPlatformTabs(),
                   // Content
                   Expanded(
                     child:
@@ -144,7 +194,7 @@ class _RateCardsManagementScreenState extends State<RateCardsManagementScreen> {
 
   Widget _buildPlatformTabs() {
     return Container(
-      height: 60,
+      height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -152,12 +202,6 @@ class _RateCardsManagementScreenState extends State<RateCardsManagementScreen> {
         itemBuilder: (context, index) {
           final platform = _availablePlatforms[index];
           final isSelected = platform == _selectedPlatform;
-          final count =
-              platform == 'All'
-                  ? _rateCards.length
-                  : _rateCards
-                      .where((card) => card['platform'] == platform)
-                      .length;
 
           return GestureDetector(
             onTap: () {
@@ -169,65 +213,16 @@ class _RateCardsManagementScreenState extends State<RateCardsManagementScreen> {
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryPurple : Colors.white,
+                color: isSelected ? AppTheme.primaryPurple : Colors.grey[300],
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color:
-                      isSelected ? AppTheme.primaryPurple : Colors.grey[300]!,
-                  width: 1,
-                ),
-                boxShadow:
-                    isSelected
-                        ? [
-                          BoxShadow(
-                            color: AppTheme.primaryPurple.withOpacity(0.3),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                        : null,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    platform,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.grey[700],
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                  ),
-                  if (count > 0) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            isSelected
-                                ? Colors.white.withOpacity(0.2)
-                                : AppTheme.primaryPurple.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        count.toString(),
-                        style: TextStyle(
-                          color:
-                              isSelected
-                                  ? Colors.white
-                                  : AppTheme.primaryPurple,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+              child: Text(
+                platform,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.black,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 14,
+                ),
               ),
             ),
           );
@@ -238,7 +233,7 @@ class _RateCardsManagementScreenState extends State<RateCardsManagementScreen> {
 
   Widget _buildEmptyState() {
     final isFilteredEmpty =
-        _selectedPlatform != 'All' && _filteredRateCards.isEmpty;
+        _selectedPlatform != 'All Platforms' && _filteredRateCards.isEmpty;
 
     return Center(
       child: Column(
@@ -297,218 +292,176 @@ class _RateCardsManagementScreenState extends State<RateCardsManagementScreen> {
   }
 
   Widget _buildRateCardsList() {
-    return Column(
-      children: [
-        // Add Rate Card Button at the top of the list
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.all(16),
-          child: ElevatedButton.icon(
-            onPressed: () => _showAddRateCardBottomSheet(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryPurple,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 2,
-            ),
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: Text(
-              _selectedPlatform == 'All'
-                  ? 'Add New Rate Card'
-                  : 'Add Rate Card for $_selectedPlatform',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-        // Rate Cards List
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _filteredRateCards.length,
-            itemBuilder: (context, index) {
-              final rateCard = _filteredRateCards[index];
-              return _buildRateCardItem(rateCard);
-            },
-          ),
-        ),
-      ],
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _filteredRateCards.length,
+      itemBuilder: (context, index) {
+        final rateCard = _filteredRateCards[index];
+        return _buildRateCardItem(rateCard);
+      },
     );
   }
 
   Widget _buildRateCardItem(Map<String, dynamic> rateCard) {
     final price = rateCard['price'] ?? {};
     final amount = price['amount'] ?? 0;
-    final currency = price['currency'] ?? 'INR';
-    final negotiable = price['negotiable'] ?? false;
+    final currency = price['currency'] ?? '₹';
+    final title = rateCard['title'] ?? '';
+    final description = rateCard['description'] ?? '';
+    final delivery = rateCard['delivery'] ?? '';
+    final platforms = rateCard['platforms'] ?? [];
+    final paymentTerms = rateCard['paymentTerms'] ?? [];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
+      width: double.infinity, // Ensure full width
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.grey[200],
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 20),
+                  onPressed: () {
+                    // Edit functionality
+                  },
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              '$currency$amount',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.green[700],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: Text(
+              description,
+              style: const TextStyle(fontSize: 14),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 3, // Limit to 3 lines
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 4.0,
+            ),
+            child: Row(
+              children: [
+                const Text(
+                  'Delivery: ',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                Text(delivery, style: const TextStyle(fontSize: 14)),
+              ],
+            ),
+          ),
+
+          // Display payment terms if available
+          if (paymentTerms.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 4.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Payment Terms:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8.0,
+                    children: [
+                      for (var term in paymentTerms)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${term['amount']} ${term['type']}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              children: [
+                for (var platform in platforms) _buildPlatformIcon(platform),
+              ],
+            ),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryPurple.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              rateCard['platform'] ?? '',
-                              style: const TextStyle(
-                                color: AppTheme.primaryPurple,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              rateCard['contentType'] ?? '',
-                              style: const TextStyle(
-                                color: Colors.orange,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        rateCard['description'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _showEditRateCardBottomSheet(rateCard);
-                    } else if (value == 'delete') {
-                      _showDeleteConfirmation(rateCard['_id']);
-                    }
-                  },
-                  itemBuilder:
-                      (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, size: 16),
-                              SizedBox(width: 8),
-                              Text('Edit'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, size: 16, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text(
-                                'Delete',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      '$currency $amount',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryPurple,
-                      ),
-                    ),
-                    if (negotiable)
-                      Container(
-                        margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'Negotiable',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                Text(
-                  _formatDate(rateCard['createdAt']),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    );
+  }
+
+  Widget _buildPlatformIcon(String platform) {
+    IconData iconData;
+    Color iconColor;
+
+    switch (platform.toLowerCase()) {
+      case 'instagram':
+        iconData = Icons.camera_alt;
+        iconColor = Colors.pink;
+        break;
+      case 'facebook':
+        iconData = Icons.facebook;
+        iconColor = Colors.blue;
+        break;
+      case 'youtube':
+        iconData = Icons.play_arrow;
+        iconColor = Colors.red;
+        break;
+      default:
+        iconData = Icons.public;
+        iconColor = Colors.grey;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      child: Icon(iconData, color: iconColor, size: 20),
     );
   }
 
@@ -561,375 +514,728 @@ class _RateCardsManagementScreenState extends State<RateCardsManagementScreen> {
 
   void _showRateCardBottomSheet({Map<String, dynamic>? rateCard}) {
     final isEditing = rateCard != null;
-    final platformController = TextEditingController(
+    final TextEditingController descriptionController = TextEditingController(
+      text: isEditing ? rateCard['description'] : '',
+    );
+    final TextEditingController deliveryController = TextEditingController(
+      text: isEditing ? rateCard['delivery'] : '',
+    );
+    final TextEditingController rateController = TextEditingController(
       text:
-          rateCard?['platform'] ??
-          (_selectedPlatform != 'All' ? _selectedPlatform : ''),
+          isEditing && rateCard['price'] != null
+              ? rateCard['price']['amount'].toString()
+              : '',
     );
-    final contentTypeController = TextEditingController(
-      text: rateCard?['contentType'] ?? '',
-    );
-    final amountController = TextEditingController(
-      text: rateCard?['price']?['amount']?.toString() ?? '',
-    );
-    final descriptionController = TextEditingController(
-      text: rateCard?['description'] ?? '',
-    );
-    bool negotiable = rateCard?['price']?['negotiable'] ?? true;
+    final TextEditingController extraChargeController = TextEditingController();
+    final TextEditingController advancePaymentController =
+        TextEditingController();
 
-    final platforms = [
-      'Instagram',
-      'YouTube',
-      'TikTok',
-      'Facebook',
-      'Twitter',
-      'LinkedIn',
-    ];
-    final contentTypes = ['Post', 'Story', 'Reel', 'Video', 'Live', 'IGTV'];
+    String selectedPostType =
+        isEditing ? (rateCard['title'] ?? 'Story') : 'Story';
+    bool isNegotiable =
+        isEditing && rateCard['price'] != null
+            ? rateCard['price']['negotiable'] ?? false
+            : false;
+    String selectedPaymentType = '%';
+
+    // Track selected platforms
+    List<String> selectedPlatforms =
+        isEditing ? List<String>.from(rateCard['platforms'] ?? []) : [];
+
+    if (selectedPlatforms.isEmpty) {
+      selectedPlatforms = ['All Platforms'];
+    }
+
+    // Initialize payment terms list
+    List<Map<String, dynamic>> paymentTerms = [];
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => StatefulBuilder(
-            builder:
-                (context, setState) => Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return DraggableScrollableSheet(
+              initialChildSize: 0.9,
+              minChildSize: 0.5,
+              maxChildSize: 0.95,
+              expand: false,
+              builder: (context, scrollController) {
+                return SingleChildScrollView(
+                  controller: scrollController,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                      left: 20,
+                      right: 20,
+                      top: 16,
                     ),
-                  ),
-                  padding: EdgeInsets.only(
-                    left: 24,
-                    right: 24,
-                    top: 24,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Handle bar
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(2),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Close button at top
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                            padding: EdgeInsets.zero,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Title
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            isEditing ? 'Edit Rate Card' : 'Add Rate Card',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                        const SizedBox(height: 16),
+
+                        // Post Type Dropdown
+                        const Text(
+                          'Post Type',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: selectedPostType,
+                              isExpanded: true,
+                              icon: const Icon(Icons.arrow_drop_down),
+                              items:
+                                  [
+                                    'Story',
+                                    'Post',
+                                    'Reel',
+                                    'Video',
+                                    'Giveaway Collaboration',
+                                  ].map((String value) {
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Text(value),
+                                    );
+                                  }).toList(),
+                              onChanged: (newValue) {
+                                setState(() {
+                                  selectedPostType = newValue!;
+                                });
+                              },
                             ),
                           ),
-                          IconButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.close, color: Colors.grey),
+                        ),
+
+                        // Platform Selection
+                        const Text(
+                          'Select Platform',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      // Form fields
-                      SingleChildScrollView(
-                        child: Column(
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 12,
                           children: [
-                            // Platform dropdown
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[300]!),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: DropdownButtonFormField<String>(
-                                value:
-                                    platformController.text.isNotEmpty
-                                        ? platformController.text
-                                        : null,
-                                decoration: const InputDecoration(
-                                  labelText: 'Platform',
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                items:
-                                    platforms
-                                        .map(
-                                          (platform) => DropdownMenuItem(
-                                            value: platform,
-                                            child: Text(platform),
-                                          ),
-                                        )
-                                        .toList(),
-                                onChanged: (value) {
-                                  platformController.text = value ?? '';
-                                },
+                            _buildPlatformChip(
+                              'All Platforms',
+                              selectedPlatforms,
+                              (isSelected) {
+                                setState(() {
+                                  if (isSelected) {
+                                    selectedPlatforms = ['All Platforms'];
+                                  } else {
+                                    selectedPlatforms.remove('All Platforms');
+                                  }
+                                });
+                              },
+                            ),
+                            _buildPlatformChip('Youtube', selectedPlatforms, (
+                              isSelected,
+                            ) {
+                              setState(() {
+                                if (isSelected) {
+                                  selectedPlatforms.add('Youtube');
+                                  selectedPlatforms.remove('All Platforms');
+                                } else {
+                                  selectedPlatforms.remove('Youtube');
+                                }
+                              });
+                            }),
+                            _buildPlatformChip('Facebook', selectedPlatforms, (
+                              isSelected,
+                            ) {
+                              setState(() {
+                                if (isSelected) {
+                                  selectedPlatforms.add('Facebook');
+                                  selectedPlatforms.remove('All Platforms');
+                                } else {
+                                  selectedPlatforms.remove('Facebook');
+                                }
+                              });
+                            }),
+                            _buildPlatformChip('Instagram', selectedPlatforms, (
+                              isSelected,
+                            ) {
+                              setState(() {
+                                if (isSelected) {
+                                  selectedPlatforms.add('Instagram');
+                                  selectedPlatforms.remove('All Platforms');
+                                } else {
+                                  selectedPlatforms.remove('Instagram');
+                                }
+                              });
+                            }),
+                            _buildPlatformChip('Snapchat', selectedPlatforms, (
+                              isSelected,
+                            ) {
+                              setState(() {
+                                if (isSelected) {
+                                  selectedPlatforms.add('Snapchat');
+                                  selectedPlatforms.remove('All Platforms');
+                                } else {
+                                  selectedPlatforms.remove('Snapchat');
+                                }
+                              });
+                            }),
+                            _buildPlatformChip('Twitter', selectedPlatforms, (
+                              isSelected,
+                            ) {
+                              setState(() {
+                                if (isSelected) {
+                                  selectedPlatforms.add('Twitter');
+                                  selectedPlatforms.remove('All Platforms');
+                                } else {
+                                  selectedPlatforms.remove('Twitter');
+                                }
+                              });
+                            }),
+                            _buildPlatformChip('LinkedIn', selectedPlatforms, (
+                              isSelected,
+                            ) {
+                              setState(() {
+                                if (isSelected) {
+                                  selectedPlatforms.add('LinkedIn');
+                                  selectedPlatforms.remove('All Platforms');
+                                } else {
+                                  selectedPlatforms.remove('LinkedIn');
+                                }
+                              });
+                            }),
+                            _buildPlatformChip('Threads', selectedPlatforms, (
+                              isSelected,
+                            ) {
+                              setState(() {
+                                if (isSelected) {
+                                  selectedPlatforms.add('Threads');
+                                  selectedPlatforms.remove('All Platforms');
+                                } else {
+                                  selectedPlatforms.remove('Threads');
+                                }
+                              });
+                            }),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Scope of Work
+                        const Text(
+                          'Scope of Work',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: TextField(
+                            controller: descriptionController,
+                            maxLines: 4,
+                            decoration: const InputDecoration(
+                              contentPadding: EdgeInsets.all(12),
+                              border: InputBorder.none,
+                              hintText: 'Enter scope of work details',
+                              hintStyle: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            // Content Type dropdown
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[300]!),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: DropdownButtonFormField<String>(
-                                value:
-                                    contentTypeController.text.isNotEmpty
-                                        ? contentTypeController.text
-                                        : null,
-                                decoration: const InputDecoration(
-                                  labelText: 'Content Type',
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                items:
-                                    contentTypes
-                                        .map(
-                                          (type) => DropdownMenuItem(
-                                            value: type,
-                                            child: Text(type),
-                                          ),
-                                        )
-                                        .toList(),
-                                onChanged: (value) {
-                                  contentTypeController.text = value ?? '';
-                                },
+                          ),
+                        ),
+
+                        // Negotiation Toggle
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Interested in Negotiation?',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            // Amount field
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[300]!),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: TextFormField(
-                                controller: amountController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Amount (INR)',
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  prefixText: '₹ ',
-                                ),
-                                keyboardType: TextInputType.number,
+                            Switch(
+                              value: isNegotiable,
+                              onChanged: (value) {
+                                setState(() {
+                                  isNegotiable = value;
+                                });
+                              },
+                              activeColor: AppTheme.primaryPurple,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Delivery in days
+                        const Text(
+                          'Delivery in days',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: TextField(
+                            controller: deliveryController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              contentPadding: EdgeInsets.all(12),
+                              border: InputBorder.none,
+                              hintText: 'Enter number of days',
+                              hintStyle: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            // Description field
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[300]!),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: TextFormField(
-                                controller: descriptionController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Description',
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                maxLines: 3,
+                          ),
+                        ),
+
+                        // Rate for service
+                        const Text(
+                          'Rate for service',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: TextField(
+                            controller: rateController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              contentPadding: EdgeInsets.all(12),
+                              border: InputBorder.none,
+                              hintText: 'Enter rate amount',
+                              hintStyle: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            // Negotiable checkbox
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                          ),
+                        ),
+
+                        // Extra Charge
+                        const Text(
+                          'Extra Charge for more than one edit',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: TextField(
+                            controller: extraChargeController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              contentPadding: EdgeInsets.all(12),
+                              border: InputBorder.none,
+                              hintText: 'Enter extra charge amount',
+                              hintStyle: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[50],
-                                borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+
+                        // Payment Terms
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Payment Terms',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
                               ),
-                              child: Row(
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  // Add new payment term at the end of the list, not the beginning
+                                  paymentTerms.add({'amount': '', 'type': '%'});
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Add +',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Display payment terms input fields if any
+                        ...paymentTerms.asMap().entries.map((entry) {
+                          int index = entry.key;
+                          Map<String, dynamic> term = entry.value;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Checkbox(
-                                    value: negotiable,
-                                    onChanged: (value) {
+                                  Text(
+                                    'Payment Term ${index + 1}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
                                       setState(() {
-                                        negotiable = value ?? true;
+                                        paymentTerms.removeAt(index);
                                       });
                                     },
-                                    activeColor: AppTheme.primaryPurple,
-                                  ),
-                                  const Text(
-                                    'Price is negotiable',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 18,
+                                      color: Colors.grey,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(height: 32),
-                            // Action buttons
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed:
-                                        () => Navigator.of(context).pop(),
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      side: BorderSide(
-                                        color: Colors.grey[300]!,
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Cancel',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: () async {
-                                      if (platformController.text.isEmpty ||
-                                          contentTypeController.text.isEmpty ||
-                                          amountController.text.isEmpty ||
-                                          descriptionController.text.isEmpty) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Please fill all fields',
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 7,
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 16),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                        borderRadius:
+                                            const BorderRadius.horizontal(
+                                              left: Radius.circular(8),
                                             ),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                        return;
-                                      }
-
-                                      final rateCardData = {
-                                        'platform': platformController.text,
-                                        'contentType':
-                                            contentTypeController.text,
-                                        'price': {
-                                          'amount': int.parse(
-                                            amountController.text,
-                                          ),
-                                          'currency': 'INR',
-                                          'negotiable': negotiable,
+                                      ),
+                                      child: TextField(
+                                        keyboardType: TextInputType.number,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            term['amount'] = value;
+                                          });
                                         },
-                                        'description':
-                                            descriptionController.text,
-                                      };
-
-                                      try {
-                                        if (isEditing) {
-                                          await _apiService.updateRateCard(
-                                            rateCard['_id'],
-                                            rateCardData,
-                                          );
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Rate card updated successfully',
-                                              ),
-                                              backgroundColor: Colors.green,
-                                            ),
-                                          );
-                                        } else {
-                                          await _apiService.createRateCard(
-                                            rateCardData,
-                                          );
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Rate card created successfully',
-                                              ),
-                                              backgroundColor: Colors.green,
-                                            ),
-                                          );
-                                        }
-
-                                        Navigator.of(context).pop();
-                                        _loadRateCards();
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Error: ${e.toString()}',
-                                            ),
-                                            backgroundColor: Colors.red,
+                                        decoration: const InputDecoration(
+                                          contentPadding: EdgeInsets.all(12),
+                                          border: InputBorder.none,
+                                          hintText: 'Enter amount',
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 14,
                                           ),
-                                        );
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.primaryPurple,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 0,
-                                    ),
-                                    child: Text(
-                                      isEditing
-                                          ? 'Update Rate Card'
-                                          : 'Create Rate Card',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                        ),
                                       ),
                                     ),
                                   ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 16),
+                                      height:
+                                          48, // Match height with text field
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                        borderRadius:
+                                            const BorderRadius.horizontal(
+                                              right: Radius.circular(8),
+                                            ),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                          ),
+                                          child: DropdownButton<String>(
+                                            value: term['type'],
+                                            icon: const Icon(
+                                              Icons.arrow_drop_down,
+                                            ),
+                                            isExpanded: true,
+                                            items:
+                                                ['%', '₹'].map((String value) {
+                                                  return DropdownMenuItem<
+                                                    String
+                                                  >(
+                                                    value: value,
+                                                    child: Text(value),
+                                                  );
+                                                }).toList(),
+                                            onChanged: (newValue) {
+                                              setState(() {
+                                                term['type'] = newValue!;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                        const SizedBox(height: 20),
+
+                        // Advance Payment
+                        const Text(
+                          'Advance Payment',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 7,
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 20),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  borderRadius: const BorderRadius.horizontal(
+                                    left: Radius.circular(8),
+                                  ),
                                 ),
-                              ],
+                                child: TextField(
+                                  controller: advancePaymentController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    contentPadding: EdgeInsets.all(12),
+                                    border: InputBorder.none,
+                                    hintText: 'Enter amount',
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 20),
+                                height: 48, // Match height with text field
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  borderRadius: const BorderRadius.horizontal(
+                                    right: Radius.circular(8),
+                                  ),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    child: DropdownButton<String>(
+                                      value: selectedPaymentType,
+                                      icon: const Icon(Icons.arrow_drop_down),
+                                      isExpanded: true,
+                                      items:
+                                          ['%', '₹'].map((String value) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(value),
+                                            );
+                                          }).toList(),
+                                      onChanged: (newValue) {
+                                        setState(() {
+                                          selectedPaymentType = newValue!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
+
+                        // Add Rate Card Button
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(top: 16, bottom: 32),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Validate inputs
+                              if (selectedPlatforms.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Please select at least one platform',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              if (rateController.text.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter a rate'),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              // Create rate card data
+                              final newRateCard = {
+                                'title': selectedPostType,
+                                'price': {
+                                  'amount': int.parse(rateController.text),
+                                  'currency': '₹',
+                                  'negotiable': isNegotiable,
+                                },
+                                'description': descriptionController.text,
+                                'delivery': deliveryController.text,
+                                'platforms': selectedPlatforms,
+                                'platform':
+                                    selectedPlatforms.contains('All Platforms')
+                                        ? 'All Platforms'
+                                        : selectedPlatforms.first,
+                                'paymentTerms': paymentTerms,
+                                'advancePayment': {
+                                  'amount': advancePaymentController.text,
+                                  'type': selectedPaymentType,
+                                },
+                              };
+
+                              // Add to rate cards list
+                              setState(() {
+                                _rateCards.add(newRateCard);
+                              });
+
+                              Navigator.pop(context);
+
+                              // Show success message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Rate card added successfully'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryPurple,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text(
+                              'Add Rate Card',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPlatformChip(
+    String platform,
+    List<String> selectedPlatforms,
+    Function(bool) onSelected,
+  ) {
+    final isSelected = selectedPlatforms.contains(platform);
+    return GestureDetector(
+      onTap: () => onSelected(!isSelected),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryPurple : Colors.grey[300],
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          platform,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 14,
           ),
+        ),
+      ),
     );
   }
 }
