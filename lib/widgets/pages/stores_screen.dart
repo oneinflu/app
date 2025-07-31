@@ -69,15 +69,41 @@ class _StoresScreenState extends State<StoresScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'My Stores',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: ElevatedButton(
+              onPressed: () {
+                // Add store functionality
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[200],
+                foregroundColor: Colors.black,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Add Store',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(Icons.add, size: 16),
+                ],
+              ),
+            ),
           ),
-        ),
-        centerTitle: true,
+        ],
+        title: null,
+        centerTitle: false,
       ),
       body: RefreshIndicator(
         onRefresh: _fetchStores,
@@ -90,7 +116,7 @@ class _StoresScreenState extends State<StoresScreen> {
     if (isLoading) {
       return const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryPurple),
         ),
       );
     }
@@ -118,7 +144,7 @@ class _StoresScreenState extends State<StoresScreen> {
             ElevatedButton(
               onPressed: _fetchStores,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
+                backgroundColor: AppTheme.primaryPurple,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Retry'),
@@ -160,30 +186,41 @@ class _StoresScreenState extends State<StoresScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: stores.length,
-      itemBuilder: (context, index) {
-        final store = stores[index];
-        return _buildStoreCard(store);
-      },
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Your Stores',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.builder(
+              itemCount: stores.length,
+              itemBuilder: (context, index) {
+                final store = stores[index];
+                return _buildStoreListItem(store);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStoreCard(Map<String, dynamic> store) {
+  Widget _buildStoreListItem(Map<String, dynamic> store) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: InkWell(
         onTap: () {
@@ -196,166 +233,73 @@ class _StoresScreenState extends State<StoresScreen> {
             ),
           );
         },
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Banner Image
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              // Store Icon
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Icon(
+                  Icons.storefront,
+                  color: Colors.grey[700],
+                  size: 24,
+                ),
               ),
-              child: Container(
-                height: 150,
-                width: double.infinity,
-                child: store['bannerImage'] != null && store['bannerImage'].toString().isNotEmpty
-                    ? Image.network(
-                        store['bannerImage'],
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: Icon(
-                              Icons.store,
-                              size: 48,
-                              color: Colors.grey[400],
-                            ),
-                          );
-                        },
-                      )
-                    : Container(
-                        color: Colors.grey[200],
-                        child: Icon(
-                          Icons.store,
-                          size: 48,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-              ),
-            ),
-            
-            // Store Info
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          store['storeName'] ?? 'Unnamed Store',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: (store['isActive'] == true) 
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          (store['isActive'] == true) ? 'Active' : 'Inactive',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: (store['isActive'] == true) 
-                                ? Colors.green[700]
-                                : Colors.red[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  if (store['description'] != null)
+              const SizedBox(width: 12),
+              // Store Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      store['description'],
+                      store['storeName'] ?? 'Unnamed Store',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getStoreType(store),
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.grey[600],
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  Row(
-                    children: [
-                      _buildInfoChip(
-                        Icons.category_outlined,
-                        '${(store['categories'] as List?)?.length ?? 0} Categories',
-                      ),
-                      const SizedBox(width: 12),
-                      _buildInfoChip(
-                        Icons.inventory_2_outlined,
-                        '${(store['items'] as List?)?.length ?? 0} Items',
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  Row(
-                    children: [
-                      _buildInfoChip(
-                        Icons.star_outline,
-                        '${store['rating'] ?? 0} Rating',
-                      ),
-                      const SizedBox(width: 12),
-                      _buildInfoChip(
-                        Icons.shopping_bag_outlined,
-                        '${store['totalSales'] ?? 0} Sales',
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              // Arrow Icon
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey[400],
+                size: 16,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14,
-            color: Colors.grey[600],
-          ),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
+  String _getStoreType(Map<String, dynamic> store) {
+    // This is a placeholder - you should replace with actual store type logic
+    if (store['storeType'] != null) {
+      return store['storeType'];
+    } else if (store['isService'] == true) {
+      return 'Service Business';
+    } else if (store['isAffiliate'] == true) {
+      return 'Affiliate Store';
+    } else {
+      return 'Retail Store';
+    }
   }
 }

@@ -7,6 +7,7 @@ import 'package:influnew/widgets/pages/available_slots_management_screen.dart';
 import 'package:influnew/widgets/pages/channel_benefits_screen.dart';
 import 'package:influnew/widgets/pages/channel_creation_screen.dart';
 import 'package:influnew/widgets/pages/influencer_profile_display_screen.dart';
+import 'package:influnew/widgets/pages/invite_followers_screen.dart';
 import 'package:influnew/widgets/pages/partner_benefits_screen.dart';
 import 'package:influnew/widgets/pages/rate_cards_management_screen.dart';
 import 'package:influnew/widgets/pages/store_benefits_screen.dart';
@@ -193,12 +194,11 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                           );
                         }),
                         _buildMenuItem('Invite Followers', Icons.group_add, () {
-                          // TODO: Navigate to invite followers
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Invite followers feature coming soon!',
-                              ),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => const InviteFollowersScreen(),
                             ),
                           );
                         }),
