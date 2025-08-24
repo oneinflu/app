@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:influnew/services/api_service.dart';
-import 'package:influnew/widgets/pages/products_services_management_screen.dart';
 import 'dart:io';
 import '../../app_theme.dart';
+import 'business_document_upload_screen.dart';
 import 'profile_management_screen.dart';
 
 class StoreCreationScreen extends StatefulWidget {
@@ -16,18 +15,21 @@ class StoreCreationScreen extends StatefulWidget {
 class _StoreCreationScreenState extends State<StoreCreationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _storeNameController = TextEditingController();
-  final _websiteController = TextEditingController();
   final _locationController = TextEditingController();
 
-  String _selectedBusinessType = 'Product'; // Default business type
-  String _selectedSubCategory = ''; // Will be set based on business type
+  String _selectedStoreType = 'Retail Store';
+  String _selectedBusinessType = 'Product';
+  String _selectedSubCategory = '';
   List<File> _storeImages = [];
-  bool _isOnlineBusiness = false;
 
-  // Sub-categories based on business type
+  final List<String> _storeTypes = [
+    'Retail Store',
+    'Affiliate Store',
+    'Wholesale Store',
+  ];
+
   final Map<String, List<String>> _subCategories = {
     'Product': [
-      'Grocery',
       'Fashion',
       'Electronics',
       'Home & Kitchen',
@@ -35,10 +37,8 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
       'Toys & Games',
       'Books',
       'Sports',
-      'Other',
     ],
     'Service': [
-      'Real Estate',
       'Interior Design',
       'Education',
       'Healthcare',
@@ -50,17 +50,21 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
     ],
   };
 
+  bool get _needsLocationDetails =>
+      _selectedStoreType == 'Retail Store' ||
+      _selectedStoreType == 'Wholesale Store';
+
+  bool get _needsStorePhotos => _selectedStoreType == 'Retail Store';
+
   @override
   void initState() {
     super.initState();
-    // Set default sub-category
     _selectedSubCategory = _subCategories[_selectedBusinessType]![0];
   }
 
   @override
   void dispose() {
     _storeNameController.dispose();
-    _websiteController.dispose();
     _locationController.dispose();
     super.dispose();
   }
@@ -82,6 +86,46 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
     });
   }
 
+  void _showNotificationModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.dividerColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Notifications',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                const Center(
+                  child: Text(
+                    'No new notifications',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,13 +133,85 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'Create Store',
-          style: TextStyle(color: Colors.black),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.dividerColor, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 20,
+                ),
+              ),
+            ),
+            const Text(
+              'Create Store',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            GestureDetector(
+              onTap: () => _showNotificationModal(context),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.dividerColor, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    const Center(
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.black,
+                        size: 20,
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentCoral,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       body: Form(
@@ -115,7 +231,6 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Store Name
               _buildTextFormField(
                 controller: _storeNameController,
                 label: 'Store Name',
@@ -129,42 +244,53 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Business Type (Online/Offline)
               const Text(
-                'Business Type',
+                'Store Type',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  _buildBusinessTypeOption('Offline', !_isOnlineBusiness),
-                  const SizedBox(width: 15),
-                  _buildBusinessTypeOption('Online', _isOnlineBusiness),
-                ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: _selectedStoreType,
+                    items:
+                        _storeTypes.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedStoreType = newValue!;
+                      });
+                    },
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
 
-              // Location (for offline) or Website (for online)
-              _isOnlineBusiness
-                  ? _buildTextFormField(
-                    controller: _websiteController,
-                    label: 'Website (Optional)',
-                    hint: 'Enter your website URL',
-                  )
-                  : _buildTextFormField(
-                    controller: _locationController,
-                    label: 'Location',
-                    hint: 'Enter your store location',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter store location';
-                      }
-                      return null;
-                    },
-                  ),
-              const SizedBox(height: 20),
+              if (_needsLocationDetails) ...[
+                _buildTextFormField(
+                  controller: _locationController,
+                  label: 'Location',
+                  hint: 'Enter your store location',
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter store location';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
 
-              // Product or Service selection
               const Text(
                 'Category',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -185,7 +311,6 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Sub-category dropdown
               const Text(
                 'Sub-Category',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -220,8 +345,7 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Store Images (only for offline businesses)
-              if (!_isOnlineBusiness) ...[
+              if (_needsStorePhotos) ...[
                 const Text(
                   'Store Photos',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -236,67 +360,19 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
                 const SizedBox(height: 20),
               ],
 
-              // Submit Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  // In the Create Store button onPressed method (around line 243-252)
-                  onPressed: () async {
+                  onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      try {
-                        // Create store data
-                        final storeData = {
-                          'storeName': _storeNameController.text.trim(),
-                          'description':
-                              'Store created from store creation screen',
-                          'storeType': _isOnlineBusiness ? 'online' : 'offline',
-                          'categories': [
-                            _selectedSubCategory,
-                          ], // You may need to map this properly
-                        };
-
-                        // Call API to create store
-                        final response = await ApiService().post(
-                          '/api/users/stores',
-                          data: storeData,
-                        );
-
-                        if (response.success && response.data != null) {
-                          final responseData =
-                              response.data as Map<String, dynamic>;
-                          final store =
-                              responseData['store'] as Map<String, dynamic>;
-                          final storeId = store['_id'] as String;
-
-                          // Navigate to ProductsServicesManagementScreen with storeId
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => ProductsServicesManagementScreen(
-                                    storeId: storeId,
-                                  ),
-                            ),
-                            (route) => false, // Remove all previous routes
-                          );
-                        } else {
-                          // Handle error
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Failed to create store'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        // Handle error
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error creating store: $e'),
-                            backgroundColor: Colors.red,
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => BusinessDocumentUploadScreen(
+                            storeId: DateTime.now().millisecondsSinceEpoch.toString(), // Temporary ID
                           ),
-                        );
-                      }
+                        ),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -316,41 +392,6 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBusinessTypeOption(String type, bool isSelected) {
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _isOnlineBusiness = type == 'Online';
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryPurple : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color:
-                  isSelected
-                      ? AppTheme.primaryPurple
-                      : Colors.grey.withOpacity(0.5),
-              width: 1,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              type,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black87,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
           ),
         ),
       ),
@@ -437,7 +478,6 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
   Widget _buildImagePicker() {
     return Column(
       children: [
-        // Image grid
         if (_storeImages.isNotEmpty)
           Container(
             height: 120,
@@ -484,8 +524,6 @@ class _StoreCreationScreenState extends State<StoreCreationScreen> {
               },
             ),
           ),
-
-        // Add image button
         GestureDetector(
           onTap: _storeImages.length < 5 ? _pickImages : null,
           child: Container(

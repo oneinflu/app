@@ -2,13 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:influnew/providers/auth_provider.dart';
 import 'package:influnew/verification_screen.dart';
+import 'package:influnew/widgets/pages/best_offers_screen.dart';
+import 'package:influnew/widgets/pages/collab_requests_page.dart';
+import 'package:influnew/widgets/pages/collabs_categories_page.dart';
+import 'package:influnew/widgets/pages/course_enrollments_page.dart';
 import 'package:influnew/widgets/pages/create_influencer_profile_screen.dart';
 import 'package:influnew/widgets/pages/discover_influencers_screen.dart';
 import 'package:influnew/widgets/pages/earnings_screen.dart';
-import 'package:influnew/widgets/pages/feed_screen.dart';
+import 'package:influnew/widgets/pages/find_courses_screen.dart';
+import 'package:influnew/widgets/pages/influencer_bookings_page.dart';
+import 'package:influnew/widgets/pages/investments_page.dart';
+import 'package:influnew/widgets/pages/my_orders_page.dart';
+
 import 'package:influnew/widgets/pages/orders_page.dart';
 import 'package:influnew/widgets/pages/partner_benefits_screen.dart';
+import 'package:influnew/widgets/pages/product_detail_page.dart';
 import 'package:influnew/widgets/pages/profile_management_screen.dart';
+import 'package:influnew/widgets/pages/store_benefits_screen.dart';
 import 'app_theme.dart';
 import 'widgets/pages/for_you_page.dart';
 
@@ -19,12 +29,34 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _selectedIndex = 0;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundLight,
       body: _buildBody(),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
@@ -36,227 +68,134 @@ class _HomeScreenState extends State<HomeScreen> {
         return _buildHomeContent();
       case 1:
         return const ForYouPage();
-      case 2: // Add this case for the middle index
-        return const FeedScreen();
+      case 2:
+        return const ProductDetailPage();
       case 3:
-        return const OrdersPage();
+        return const InvestmentsPage(); // Changed from OrdersPage
       case 4:
-        return const EarningsScreen(fromBottomNav: true); // Pass the flag
+        return const EarningsScreen(fromBottomNav: true);
       default:
         return _buildHomeContent();
     }
   }
 
-  Widget _buildPlaceholderContent(String title) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: AppTheme.primaryPurple,
-      ),
-      body: Center(child: Text('$title Page Coming Soon')),
-    );
-  }
-
   Widget _buildHomeContent() {
     return Container(
-      decoration: const BoxDecoration(gradient: AppTheme.purpleGradient),
+      decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 20),
-            _buildLogoAndHeading(), // New method to replace quick actions
-            const SizedBox(height: 20),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 24),
+                _buildWelcomeSection(),
+                const SizedBox(height: 24),
+                Container(
+                  decoration: const BoxDecoration(
+                    color: AppTheme.backgroundLight,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
                   ),
-                ),
-                child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfluencerProfileCard(),
+                      _buildQuickActionsCard(),
+                      const SizedBox(height: 20),
+                      _buildEarningOpportunitiesCard(),
                       const SizedBox(height: 20),
                       _buildStoreCard(),
                       const SizedBox(height: 20),
+                      _buildReferralCard(),
+                      const SizedBox(height: 20),
                       _buildEarningsCard(),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  // New method to display logo and heading
-  Widget _buildLogoAndHeading() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Logo
-        Center(
-          child: Image.asset(
-            'assets/images/logo.png',
-            height: 40,
-            errorBuilder: (context, error, stackTrace) {
-              return const Text(
-                'influ',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileManagementScreen(),
                 ),
               );
             },
-          ),
-        ),
-        const SizedBox(height: 15),
-        // Heading with gradient text
-        Center(
-          child: ShaderMask(
-            shaderCallback: (Rect bounds) {
-              return const LinearGradient(
-                colors: [Color.fromARGB(255, 83, 212, 244), Colors.white],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ).createShader(bounds);
-            },
-            child: const Text(
-              'Welcome to New \n World of Influencing',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color:
-                    Colors
-                        .white, // This color is used as the base for the gradient
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.person_outline,
+                color: Colors.white,
+                size: 20,
               ),
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  // Keep all the existing methods below
-  // _buildHeader(), _buildQuickActions(), etc.
-  // Update the _buildHeader method in home_screen.dart
-
-  Widget _buildHeader() {
-    return GetBuilder<AuthProvider>(
-      builder: (authProvider) {
-        final userType = authProvider.userType;
-        final kycData = authProvider.userData?['kyc'];
-
-        // Add debug prints
-        print('=== DEBUG VERIFICATION STATUS ===');
-        print('UserType: $userType');
-        print('UserData: ${authProvider.userData}');
-        print('KYC Data: $kycData');
-
-        // Check verification status based on user type
-        bool isFullyVerified = false;
-        if (userType == 'Individual') {
-          // For individuals: Aadhaar + PAN
-          final isAadhaarVerified = kycData?['aadhaar']?['isVerified'] == true;
-          final isPanVerified = kycData?['pan']?['isVerified'] == true;
-          print('Aadhaar Verified: $isAadhaarVerified');
-          print('PAN Verified: $isPanVerified');
-          isFullyVerified = isAadhaarVerified && isPanVerified;
-        } else if (userType == 'Organization') {
-          // For organizations: GST + PAN
-          final isGstVerified = kycData?['gst']?['isVerified'] == true;
-          final isPanVerified = kycData?['pan']?['isVerified'] == true;
-          print('GST Verified: $isGstVerified');
-          print('PAN Verified: $isPanVerified');
-          isFullyVerified = isGstVerified && isPanVerified;
-        }
-
-        print('Is Fully Verified: $isFullyVerified');
-        print('================================');
-
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Row(
             children: [
               GestureDetector(
                 onTap: () {
-                  // Navigate to profile management screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProfileManagementScreen(),
-                    ),
-                  );
+                  _showNotificationDialog();
                 },
                 child: Container(
-                  width: 40,
-                  height: 40,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
-                  child: const Icon(Icons.person, color: Colors.grey),
-                ),
-              ),
-              GestureDetector(
-                onTap:
-                    isFullyVerified
-                        ? null
-                        : () {
-                          // Only navigate if not fully verified
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const VerificationScreen(),
-                            ),
-                          );
-                        },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        isFullyVerified
-                            ? Colors.green.withOpacity(0.8)
-                            : Colors.black.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
+                  child: Stack(
                     children: [
-                      Text(
-                        isFullyVerified ? 'Verified' : 'Get Verified Badge',
-                        style: const TextStyle(
+                      const Center(
+                        child: Icon(
+                          Icons.notifications_outlined,
                           color: Colors.white,
-                          fontSize: 12,
+                          size: 20,
                         ),
                       ),
-                      const SizedBox(width: 5),
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: isFullyVerified ? Colors.white : Colors.green,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.check,
-                          color: isFullyVerified ? Colors.green : Colors.white,
-                          size: 12,
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppTheme.accentCoral,
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
                     ],
@@ -265,51 +204,111 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  Widget _buildQuickActions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildWelcomeSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          Container(
+            width: 70,
+            height: 70,
+
+            child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+          ),
+
+          const Text(
+            'Welcome to New World\nof Influencing',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start your journey as an influencer and connect with brands',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.8),
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Text(
-                'Quick actions',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              Icon(
+                Icons.flash_on_outlined,
+                color: AppTheme.secondaryColor,
+                size: 20,
               ),
-              SizedBox(width: 5),
-              Icon(Icons.bolt, color: Colors.yellow, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Quick Actions',
+                style: AppTheme.headlineStyle.copyWith(fontSize: 16),
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 15),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+          const SizedBox(height: 20),
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildQuickActionItem('Discover\nInfluencers', 'discover.png'),
-              _buildQuickActionItem('Find Offers\nNearby', 'compass 2.png'),
-              _buildQuickActionItem('Find\nCourses', 'compass 3.png'),
-              _buildQuickActionItem('Find Best\nCollabs', 'compass 4.png'),
+              _buildQuickActionItem(
+                'Discover\nInfluencers',
+                Icons.people_outline,
+                AppTheme.primaryColor,
+              ),
+              _buildQuickActionItem(
+                'Find Offers\nNearby',
+                Icons.location_on_outlined,
+                AppTheme.accentCoral,
+              ),
+              _buildQuickActionItem(
+                'Find\nCourses',
+                Icons.school_outlined,
+                AppTheme.accentMint,
+              ),
+              _buildQuickActionItem(
+                'Find Best\nCollabs',
+                Icons.handshake_outlined,
+                AppTheme.accentYellow,
+              ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildQuickActionItem(String title, String iconName) {
+  Widget _buildQuickActionItem(String title, IconData icon, Color color) {
     return GestureDetector(
       onTap: () {
         if (title.contains('Discover\nInfluencers')) {
@@ -319,43 +318,47 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context) => const DiscoverInfluencersScreen(),
             ),
           );
+        } else if (title.contains('Find Offers\nNearby')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const BestOffersScreen()),
+          );
+        } else if (title.contains('Find\nCourses')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const FindCoursesScreen()),
+          );
+        } else if (title.contains('Find Best\nCollabs')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CollabsCategoriesPage(),
+            ),
+          );
         }
       },
       child: Container(
-        width: 80,
-        // Remove the right margin to allow proper centering
-        // margin: const EdgeInsets.only(right: 12),
+        width: 70,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: AppTheme.quickActionsCard,
-                borderRadius: BorderRadius.circular(15),
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: color.withOpacity(0.2), width: 1),
               ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/icons/$iconName',
-                  width: 24,
-                  height: 24,
-                  color: Colors.white,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.image_not_supported,
-                      color: Colors.white,
-                      size: 24,
-                    );
-                  },
-                ),
-              ),
+              child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(height: 8),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 10),
+              style: AppTheme.secondaryTextStyle.copyWith(
+                fontSize: 11,
+                height: 1.2,
+              ),
             ),
           ],
         ),
@@ -374,25 +377,32 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.primaryPurple,
+          gradient: AppTheme.actionGradient,
           borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.secondaryColor.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            Image.asset(
-              'assets/images/icons/compass 5.png',
-              width: 50,
-              height: 50,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 50,
-                  height: 50,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.person, color: Colors.grey),
-                );
-              },
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.person_add_outlined,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
             const SizedBox(width: 16),
             const Expanded(
@@ -402,20 +412,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     'Set up your Influencer profile',
                     style: TextStyle(
-                      color: Colors.white,
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
                   SizedBox(height: 4),
                   Text(
                     'Start, Connect & done!',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                    style: TextStyle(fontSize: 13, color: Colors.white),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.white),
+            const Icon(Icons.chevron_right, color: Colors.white, size: 20),
           ],
         ),
       ),
@@ -424,49 +434,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildStoreCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStoreActionItem('Manage\nStore', 'compass 6.png'),
-              _buildStoreActionItem('Discover\nInfluencers', 'compass 7.png'),
-              _buildStoreActionItem('Upsell\nCourses', 'compass 8.png'),
-              _buildStoreActionItem('Teach\nOnline', 'compass 1.png'),
-            ],
+          Text(
+            'Track & Manage',
+            style: AppTheme.headlineStyle.copyWith(fontSize: 16),
           ),
           const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 16),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Set up your Free Store or Channel',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Manage products, services or even courses',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ],
-                ),
+              _buildStoreActionItem(
+                'My\nOrders',
+                Icons.shopping_bag_outlined,
+                AppTheme.primaryColor,
               ),
-              const Icon(Icons.chevron_right),
+              _buildStoreActionItem(
+                'Influencer\nBookings',
+                Icons.event_available_outlined,
+                AppTheme.secondaryColor,
+              ),
+              _buildStoreActionItem(
+                'Collab\nRequests',
+                Icons.handshake_outlined,
+                AppTheme.accentCoral,
+              ),
+              _buildStoreActionItem(
+                'Course\nEnrollments',
+                Icons.school_outlined,
+                AppTheme.accentMint,
+              ),
             ],
           ),
         ],
@@ -474,100 +484,302 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStoreActionItem(String title, String iconName) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: AppTheme.quickActionsCard.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Center(
-            child: Image.asset(
-              'assets/images/icons/$iconName',
-              width: 24,
-              height: 24,
-              color: Colors.white,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(
-                  Icons.image_not_supported,
-                  color: Colors.white,
-                  size: 24,
-                );
-              },
+  Widget _buildReferralCard() {
+    return GestureDetector(
+      onTap: () {
+        // Add referral action here
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: AppTheme.actionGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.secondaryColor.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.share_outlined,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Refer and Grow',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Invite friends & earn rewards together',
+                    style: TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.white, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStoreActionItem(String title, IconData icon, Color color) {
+    return GestureDetector(
+      onTap: () {
+        if (title.contains('My\nOrders')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MyOrdersPage()),
+          );
+        } else if (title.contains('Influencer\nBookings')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const InfluencerBookingsPage(),
+            ),
+          );
+        } else if (title.contains('Collab\nRequests')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CollabRequestsPage()),
+          );
+        } else if (title.contains('Course\nEnrollments')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CourseEnrollmentsPage(),
+            ),
+          );
+        }
+      },
+      child: Container(
+        width: 70,
+        child: Column(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: color.withOpacity(0.2), width: 1),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppTheme.secondaryTextStyle.copyWith(
+                fontSize: 11,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEarningOpportunitiesCard() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const EarningsScreen(fromBottomNav: false),
           ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: AppTheme.actionGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.secondaryColor.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.monetization_on_outlined,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Multiple Ways to Earn',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Discover various earning opportunities with INFLU',
+                    style: TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.white, size: 20),
+          ],
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildEarningsCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          const Expanded(
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(Icons.business, color: Colors.grey[600], size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'How to use INFLU for earnings?',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Watch how INFLU can make your rich',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 80,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                const Icon(Icons.play_arrow, color: Colors.red, size: 30),
-                Positioned(
-                  right: 4,
-                  bottom: 4,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.play_arrow,
-                      color: Colors.white,
-                      size: 12,
-                    ),
+                  'Bharat ka Engine',
+                  style: AppTheme.bodyTextStyle.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Building the future of India',
+                  style: AppTheme.secondaryTextStyle.copyWith(fontSize: 13),
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showNotificationDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.dividerColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Icon(
+                  Icons.notifications_outlined,
+                  color: AppTheme.primaryColor,
+                  size: 48,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Notifications',
+                  style: AppTheme.headlineStyle.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Stay updated with the latest opportunities and updates',
+                  style: AppTheme.secondaryTextStyle,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.dividerColor),
+                  ),
+                  child: Text(
+                    'No new notifications',
+                    style: AppTheme.secondaryTextStyle,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
     );
   }
 
@@ -575,30 +787,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Bharath ka Engine text
-        Container(
-          width: double.infinity,
-          color: Colors.grey[200],
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: const Text(
-            'Bharath Ka Engine',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        // Original navigation bar
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
-                offset: const Offset(0, -5),
+                offset: const Offset(0, -2),
               ),
             ],
           ),
@@ -607,16 +803,31 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
-                vertical: 8.0,
+                vertical: 12.0,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildNavItem(0, Icons.home, 'Home'),
-                  _buildNavItem(1, Icons.grid_view, 'For You'),
+                  _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home'),
+                  _buildNavItem(
+                    1,
+                    Icons.grid_view_outlined,
+                    Icons.grid_view,
+                    'For You',
+                  ),
                   _buildCenterNavItem(),
-                  _buildNavItem(3, Icons.shopping_bag_outlined, 'Orders'),
-                  _buildNavItem(4, Icons.bar_chart, 'Earnings'),
+                  _buildNavItem(
+                    3,
+                    Icons.business_outlined,
+                    Icons.business,
+                    'Invest',
+                  ),
+                  _buildNavItem(
+                    4,
+                    Icons.bar_chart_outlined,
+                    Icons.bar_chart,
+                    'Earnings',
+                  ),
                 ],
               ),
             ),
@@ -626,7 +837,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _buildNavItem(
+    int index,
+    IconData outlinedIcon,
+    IconData filledIcon,
+    String label,
+  ) {
     final isSelected = _selectedIndex == index;
     return InkWell(
       onTap: () {
@@ -634,23 +850,30 @@ class _HomeScreenState extends State<HomeScreen> {
           _selectedIndex = index;
         });
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? AppTheme.primaryPurple : Colors.grey,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? AppTheme.primaryPurple : Colors.grey,
-              fontSize: 12,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? filledIcon : outlinedIcon,
+              color:
+                  isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
+              size: 22,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color:
+                    isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -658,9 +881,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCenterNavItem() {
     return InkWell(
       onTap: () {
-        setState(() {
-          _selectedIndex = 2; // Set index to 2 for the middle item
-        });
+        Navigator.pushNamed(context, '/product_detail_page');
       },
       child: Container(
         width: 56,
@@ -676,19 +897,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        child: Center(
-          child: Image.asset(
-            'assets/images/favicon.png',
-            width: 30,
-            height: 30,
-            errorBuilder: (context, error, stackTrace) {
-              return const Icon(
-                Icons.play_arrow,
-                color: Colors.white,
-                size: 30,
-              );
-            },
-          ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Image.asset('assets/images/favicon.png', fit: BoxFit.contain),
         ),
       ),
     );

@@ -48,6 +48,10 @@ dependencies:
   qr_flutter: ^4.1.0
   share_plus: ^11.0.0
   table_calendar: ^3.2.0
+  video_player: ^2.10.0
+  google_maps_flutter: ^2.12.3
+  flutter_svg: ^2.0.13
+  carousel_slider: ^5.1.1
 
 dev_dependencies:
   flutter_test:
@@ -79,6 +83,7 @@ flutter:
     - assets/images/icons/
     - assets/images/categories/
     - assets/images/products/
+    - assets/images/boat.mp4
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

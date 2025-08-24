@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:influnew/widgets/pages/business_collab_detail_screen.dart';
+import '../../app_theme.dart';
 import 'influencer_detail_screen.dart';
 
 class InfluencerBookingsPage extends StatefulWidget {
@@ -8,17 +10,98 @@ class InfluencerBookingsPage extends StatefulWidget {
   State<InfluencerBookingsPage> createState() => _InfluencerBookingsPageState();
 }
 
-class _InfluencerBookingsPageState extends State<InfluencerBookingsPage> {
-  int _selectedTabIndex = 0;
+class _InfluencerBookingsPageState extends State<InfluencerBookingsPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  bool _showNotificationDot = true;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: _buildAppBar(context),
-      body: Column(
-        children: [_buildTabs(), Expanded(child: _buildBookingsList())],
-      ),
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _showNotificationModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Notifications',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() => _showNotificationDot = false);
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          'Mark all as read',
+                          style: TextStyle(color: AppTheme.primaryColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: 3,
+                  itemBuilder:
+                      (context, index) => ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: AppTheme.primaryColor.withOpacity(
+                            0.1,
+                          ),
+                          child: Icon(
+                            Icons.notifications_outlined,
+                            color: AppTheme.primaryColor,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text('Notification ${index + 1}'),
+                        subtitle: Text(
+                          '2 hours ago',
+                          style: TextStyle(color: AppTheme.textSecondary),
+                        ),
+                        onTap: () => Navigator.pop(context),
+                      ),
+                ),
+              ],
+            ),
+          ),
     );
   }
 
@@ -26,150 +109,325 @@ class _InfluencerBookingsPageState extends State<InfluencerBookingsPage> {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),
-        onPressed: () => Navigator.of(context).pop(),
+      leadingWidth: 72,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 16),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: AppTheme.textSecondary,
+              size: 18,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+            padding: EdgeInsets.zero,
+          ),
+        ),
       ),
-      title: const Text(
+      title: Text(
         'Influencer Bookings',
         style: TextStyle(
-          color: Color(0xFF4A2D82),
+          color: AppTheme.primaryColor,
           fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
       ),
       centerTitle: true,
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: AppTheme.textSecondary,
+                    size: 20,
+                  ),
+                  onPressed: _showNotificationModal,
+                  padding: EdgeInsets.zero,
+                ),
+                if (_showNotificationDot)
+                  Positioned(
+                    right: 10,
+                    top: 10,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppTheme.accentCoral,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildTabs() {
-    // List of tab items
-    final tabs = [
-      {'title': 'Upcoming', 'index': 0},
-      {'title': 'In Progress', 'index': 1},
-      {'title': 'Completed', 'index': 2},
-      {'title': 'Cancelled', 'index': 3},
-      {'title': 'No Show', 'index': 4},
-      {'title': 'Disputed', 'index': 5},
-    ];
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          TabBar(
+            controller: _tabController,
+            labelColor: AppTheme.primaryColor,
+            unselectedLabelColor: AppTheme.textSecondary,
+            indicatorColor: AppTheme.primaryColor,
+            indicatorWeight: 3,
+            indicatorSize: TabBarIndicatorSize.label,
+            labelStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+            tabs: const [
+              Tab(text: 'Bookings Made'),
+              Tab(text: 'Bookings Received'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusTabs() {
+    final statuses = ['Upcoming', 'In Progress', 'Completed', 'Cancelled'];
 
     return Container(
-      height: 70,
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: SingleChildScrollView(
+      height: 40,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Row(
-          children:
-              tabs.map((tab) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: _buildTabItem(
-                    tab['title'] as String,
-                    tab['index'] as int,
-                  ),
-                );
-              }).toList(),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: statuses.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(statuses[index]),
+              selected: index == 0,
+              onSelected: (selected) {},
+              backgroundColor: Colors.grey[200],
+              selectedColor: AppTheme.primaryColor.withOpacity(0.1),
+              labelStyle: TextStyle(
+                color:
+                    index == 0 ? AppTheme.primaryColor : AppTheme.textSecondary,
+                fontSize: 12,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color:
+                      index == 0 ? AppTheme.primaryColor : Colors.transparent,
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildTabItem(String title, int index) {
-    final isSelected = _selectedTabIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTabIndex = index;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF4A2D82) : Colors.grey[200],
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black54,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+  Widget _buildBookingsList({required bool isReceived}) {
+    return Column(
+      children: [
+        _buildStatusTabs(),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              return _buildBookingItem(
+                name:
+                    isReceived
+                        ? 'Client ${index + 1}'
+                        : 'Influencer ${index + 1}',
+                date: 'Jun ${index + 1}th, 2025',
+                status: _getRandomStatus(),
+                isReceived: isReceived,
+              );
+            },
           ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildBookingsList() {
-    // Sample data for demonstration
-    final bookings = [
-      {'name': 'Shannu Jashwanth', 'date': 'Jun 7th, 2025 by 11PM'},
-      {'name': 'Divya Jaiswal', 'date': 'Jun 7th, 2025 by 11PM'},
-    ];
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: bookings.length,
-      itemBuilder: (context, index) {
-        final booking = bookings[index];
-        return _buildBookingItem(booking['name']!, booking['date']!);
-      },
-    );
+  String _getRandomStatus() {
+    final statuses = ['Upcoming', 'In Progress', 'Completed', 'Cancelled'];
+    return statuses[DateTime.now().millisecond % statuses.length];
   }
 
-  Widget _buildBookingItem(String name, String date) {
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'upcoming':
+        return AppTheme.primaryColor;
+      case 'in progress':
+        return AppTheme.accentYellow;
+      case 'completed':
+        return AppTheme.accentMint;
+      case 'cancelled':
+        return AppTheme.accentCoral;
+      default:
+        return AppTheme.textSecondary;
+    }
+  }
+
+  Widget _buildBookingItem({
+    required String name,
+    required String date,
+    required String status,
+    required bool isReceived, // Added this parameter
+  }) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => InfluencerDetailScreen(
-              name: name,
-              date: date,
-            ),
+            builder:
+                (context) =>
+                    isReceived
+                        ? BusinessCollabDetailScreen(
+                          name: name,
+                          location: 'Hyderabad, India', // Default location
+                        )
+                        : InfluencerDetailScreen(name: name, date: date),
           ),
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.only(bottom: 12), // Reduced margin
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          borderRadius: BorderRadius.circular(8), // Smaller radius
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.1),
+          ), // Lighter border
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02), // Lighter shadow
+              blurRadius: 4, // Reduced blur
+              offset: const Offset(0, 1), // Smaller offset
+            ),
+          ],
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ), // Reduced padding
+          leading: CircleAvatar(
+            radius: 20, // Smaller avatar
+            backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+            child: Text(
+              name[0],
+              style: TextStyle(
+                color: AppTheme.primaryColor,
+                fontSize: 14, // Smaller font
+              ),
             ),
-            // This would be an image in a real app
-            child: const Icon(Icons.person, color: Colors.grey),
           ),
           title: Text(
             name,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: const TextStyle(
+              fontWeight: FontWeight.w500, // Lighter weight
+              fontSize: 14, // Smaller font
+            ),
           ),
           subtitle: Row(
             children: [
-              const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+              Icon(
+                Icons.calendar_today,
+                size: 12,
+                color: AppTheme.textSecondary,
+              ),
               const SizedBox(width: 4),
               Text(
                 date,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ), // Smaller padding
+                decoration: BoxDecoration(
+                  color: _getStatusColor(status).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: _getStatusColor(status),
+                    fontSize: 11, // Smaller font
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ],
           ),
-          trailing: const Icon(
+          trailing: Icon(
             Icons.arrow_forward_ios,
-            color: Colors.grey,
-            size: 16,
+            color: AppTheme.textSecondary,
+            size: 14, // Smaller icon
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTabContent() {
+    return TabBarView(
+      controller: _tabController,
+      children: [
+        _buildBookingsList(isReceived: false),
+        _buildBookingsList(isReceived: true),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: _buildAppBar(context),
+      body: Column(
+        children: [_buildTabs(), Expanded(child: _buildTabContent())],
       ),
     );
   }

@@ -33,18 +33,46 @@ class ProfileManagementScreen extends StatefulWidget {
       _ProfileManagementScreenState();
 }
 
-class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
+class _ProfileManagementScreenState extends State<ProfileManagementScreen>
+    with TickerProviderStateMixin {
   final AuthProvider _authProvider = Get.find<AuthProvider>();
   final StoreProvider _storeProvider = Get.find<StoreProvider>();
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
   List<Map<String, dynamic>> _channels = [];
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  // Subtle color palette
+  static const Color _primaryColor = Color(0xFF6B73FF);
+  static const Color _backgroundColor = Color(0xFFF8F9FA);
+  static const Color _cardColor = Color(0xFFFFFFFF);
+  static const Color _textPrimary = Color(0xFF2D3748);
+  static const Color _textSecondary = Color(0xFF718096);
+  static const Color _accentColor = Color(0xFF667EEA);
+  static const Color _successColor = Color(0xFF48BB78);
+  static const Color _warningColor = Color(0xFFED8936);
+  static const Color _errorColor = Color(0xFFE53E3E);
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+    _animationController.forward();
     _loadUserProfile();
     _loadChannels();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserProfile() async {
@@ -66,8 +94,6 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
   }
 
   Future<void> _loadChannels() async {
-    // TODO: Implement channel loading when channel provider is available
-    // For now, assume no channels exist
     setState(() {
       _channels = [];
     });
@@ -87,6 +113,7 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Profile picture updated successfully'),
+              backgroundColor: _successColor,
             ),
           );
         } else {
@@ -95,13 +122,17 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
               content: Text(
                 'Failed to update profile picture: ${result['message']}',
               ),
+              backgroundColor: _errorColor,
             ),
           );
         }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating profile picture: $e')),
+        SnackBar(
+          content: Text('Error updating profile picture: $e'),
+          backgroundColor: _errorColor,
+        ),
       );
     } finally {
       setState(() {
@@ -113,33 +144,26 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF341969), // Updated background start color
-              Color(0xFF372065), // Updated background end color
-            ],
-          ),
-        ),
-        child: SafeArea(
+      backgroundColor: _backgroundColor,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
           child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             child: Column(
               children: [
-                _buildHeader(),
-                _buildProfileSection(),
-                const SizedBox(height: 20),
-                // Remove the nested container and integrate sections directly
+                _buildCleanHeader(),
+                _buildCleanProfileSection(),
+                const SizedBox(height: 24),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
-                      _buildSection('Influencer Related', [
-                        _buildMenuItem(
+                      _buildCleanSection('Influencer Hub', [
+                        _buildCleanMenuItem(
                           'Manage Influencer Profile',
-                          Icons.person_outline,
+                          Icons.person_outline_rounded,
+                          _primaryColor,
                           () {
                             if (_authProvider.hasCompletedInfluencerProfile) {
                               Navigator.push(
@@ -162,95 +186,119 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                             }
                           },
                         ),
-                        _buildMenuItem('Your Rate Cards', Icons.credit_card, () {
-                          if (_authProvider.hasCompletedInfluencerProfile) {
+                        _buildCleanMenuItem(
+                          'Your Rate Cards',
+                          Icons.credit_card_rounded,
+                          _accentColor,
+                          () {
+                            if (_authProvider.hasCompletedInfluencerProfile) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) =>
+                                          const RateCardsManagementScreen(),
+                                ),
+                              );
+                            } else {
+                              _showCleanSnackBar(
+                                'Please complete your influencer profile first to access rate cards.',
+                                _warningColor,
+                              );
+                            }
+                          },
+                        ),
+                        _buildCleanMenuItem(
+                          'Manage Time-Slots',
+                          Icons.schedule_rounded,
+                          const Color(0xFF805AD5),
+                          () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder:
                                     (context) =>
-                                        const RateCardsManagementScreen(),
+                                        const AvailableSlotsManagementScreen(),
                               ),
                             );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Please complete your influencer profile first to access rate cards.',
-                                ),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
-                          }
-                        }),
-                        _buildMenuItem('Manage Time-Slots', Icons.schedule, () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) =>
-                                      const AvailableSlotsManagementScreen(),
-                            ),
-                          );
-                        }),
-                        _buildMenuItem('Invite Followers', Icons.group_add, () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => const InviteFollowersScreen(),
-                            ),
-                          );
-                        }),
-                      ]),
-                      const SizedBox(height: 20),
-                      _buildSection('Store Related', [
-                        _buildMenuItem('View All Stores', Icons.store, () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => StoresScreen(),
-                            ),
-                          ).then((_) => _loadUserProfile());
-                        }),
-                        _buildMenuItem(
-                          'Frequently Asked Questions',
-                          Icons.help_outline,
+                          },
+                        ),
+                        _buildCleanMenuItem(
+                          'Invite Followers',
+                          Icons.group_add_rounded,
+                          const Color(0xFF38B2AC),
                           () {
-                            // TODO: Navigate to FAQ
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('FAQ section coming soon!'),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => const InviteFollowersScreen(),
                               ),
                             );
                           },
                         ),
                       ]),
                       const SizedBox(height: 20),
-                      _buildSection('Channel Related', [
-                        _buildMenuItem('View All Channels', Icons.tv, () {
-                          // TODO: Navigate to channels list
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Channels list coming soon!'),
-                            ),
-                          );
-                        }),
-                        _buildMenuItem('Channel Benefits', Icons.star, () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => const ChannelBenefitsScreen(),
-                            ),
-                          );
-                        }),
+                      _buildCleanSection('Store Management', [
+                        _buildCleanMenuItem(
+                          'View All Stores',
+                          Icons.store_rounded,
+                          const Color(0xFF3182CE),
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StoresScreen(),
+                              ),
+                            ).then((_) => _loadUserProfile());
+                          },
+                        ),
+                        _buildCleanMenuItem(
+                          'Frequently Asked Questions',
+                          Icons.help_outline_rounded,
+                          _textSecondary,
+                          () {
+                            _showCleanSnackBar(
+                              'FAQ section coming soon!',
+                              _primaryColor,
+                            );
+                          },
+                        ),
                       ]),
                       const SizedBox(height: 20),
-                      _buildSection('More', [
-                        _buildMenuItem(
+                      _buildCleanSection('Channel Hub', [
+                        _buildCleanMenuItem(
+                          'View All Channels',
+                          Icons.tv_rounded,
+                          const Color(0xFF9F7AEA),
+                          () {
+                            _showCleanSnackBar(
+                              'Channels list coming soon!',
+                              _primaryColor,
+                            );
+                          },
+                        ),
+                        _buildCleanMenuItem(
+                          'Channel Benefits',
+                          Icons.star_rounded,
+                          const Color(0xFFD69E2E),
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => const ChannelBenefitsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ]),
+                      const SizedBox(height: 20),
+                      _buildCleanSection('Account & Settings', [
+                        _buildCleanMenuItem(
                           'Manage Social Accounts',
-                          Icons.share,
+                          Icons.share_rounded,
+                          const Color(0xFF4299E1),
                           () {
                             Navigator.push(
                               context,
@@ -262,9 +310,10 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                             );
                           },
                         ),
-                        _buildMenuItem(
+                        _buildCleanMenuItem(
                           'Manage Payment Methods',
-                          Icons.payment,
+                          Icons.payment_rounded,
+                          const Color(0xFF38B2AC),
                           () {
                             Navigator.push(
                               context,
@@ -274,27 +323,38 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                             );
                           },
                         ),
-                        _buildMenuItem('About', Icons.info_outline, () {
-                          // TODO: Navigate to about page
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('About page coming soon!'),
-                            ),
-                          );
-                        }),
-                        _buildMenuItem('Help', Icons.help, () {
-                          // TODO: Navigate to help page
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Help page coming soon!'),
-                            ),
-                          );
-                        }),
-                        _buildMenuItem('Logout', Icons.logout, () {
-                          _showLogoutConfirmationDialog();
-                        }),
+                        _buildCleanMenuItem(
+                          'About',
+                          Icons.info_outline_rounded,
+                          _textSecondary,
+                          () {
+                            _showCleanSnackBar(
+                              'About page coming soon!',
+                              _primaryColor,
+                            );
+                          },
+                        ),
+                        _buildCleanMenuItem(
+                          'Help',
+                          Icons.help_rounded,
+                          _textSecondary,
+                          () {
+                            _showCleanSnackBar(
+                              'Help page coming soon!',
+                              _primaryColor,
+                            );
+                          },
+                        ),
+                        _buildCleanMenuItem(
+                          'Logout',
+                          Icons.logout_rounded,
+                          _errorColor,
+                          () {
+                            _showLogoutConfirmationDialog();
+                          },
+                        ),
                       ]),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
                     ],
                   ),
                 ),
@@ -306,45 +366,88 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+  Widget _buildCleanHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: _cardColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const HomeScreen()),
-              );
-            },
-            child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+          Container(
+            decoration: BoxDecoration(
+              color: _backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: Icon(
+                Icons.arrow_back_ios_rounded,
+                color: _textPrimary,
+                size: 18,
+              ),
+            ),
           ),
           const Spacer(),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PrivacySecurityScreen(),
-                ),
-              );
-            },
-            child: const Icon(Icons.edit, color: Colors.white, size: 24),
+          Text(
+            'Profile',
+            style: TextStyle(
+              color: _textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            decoration: BoxDecoration(
+              color: _backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PrivacySecurityScreen(),
+                  ),
+                );
+              },
+              icon: Icon(Icons.settings_rounded, color: _textPrimary, size: 18),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProfileSection() {
+  Widget _buildCleanProfileSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: const EdgeInsets.all(20.0),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF210E47), // Updated to match other cards
-          borderRadius: BorderRadius.circular(20),
+          color: _cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade100),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -356,49 +459,82 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                       userData != null ? userData['profileURL'] : null;
 
                   return Container(
-                    width: 60,
-                    height: 60,
+                    width: 70,
+                    height: 70,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                      image:
+                      border: Border.all(
+                        color: _primaryColor.withOpacity(0.2),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _primaryColor.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child:
                           profileUrl != null
-                              ? DecorationImage(
-                                image: NetworkImage(profileUrl),
+                              ? Image.network(
+                                profileUrl,
                                 fit: BoxFit.cover,
+                                errorBuilder:
+                                    (context, error, stackTrace) => Image.asset(
+                                      'assets/images/bksaraf.png',
+                                      fit: BoxFit.cover,
+                                    ),
                               )
-                              : const DecorationImage(
-                                image: AssetImage('assets/images/bksaraf.png'),
+                              : Image.asset(
+                                'assets/images/bksaraf.png',
                                 fit: BoxFit.cover,
                               ),
                     ),
-                    child:
-                        _isLoading
-                            ? const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            )
-                            : null,
                   );
                 }),
+                if (_isLoading)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _primaryColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 Positioned(
                   bottom: 0,
                   right: 0,
                   child: GestureDetector(
                     onTap: _updateProfilePicture,
                     child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: _primaryColor,
                         shape: BoxShape.circle,
+                        border: Border.all(color: _cardColor, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _primaryColor.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: const Icon(
-                        Icons.edit,
+                        Icons.camera_alt_rounded,
                         size: 12,
-                        color: Color(0xFF2D1B69),
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -418,10 +554,11 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                             : 'User';
                     return Text(
                       name,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: _textPrimary,
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -436,9 +573,10 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                             : 'user@example.com';
                     return Text(
                       email,
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: _textSecondary,
                         fontSize: 14,
+                        letterSpacing: 0.2,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -450,17 +588,14 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                     final userType = userData?['userType'];
                     final kycData = userData?['kyc'];
 
-                    // Check verification status based on user type (same logic as homepage)
                     bool isFullyVerified = false;
                     if (userType == 'Individual') {
-                      // For individuals: Aadhaar + PAN
                       final isAadhaarVerified =
                           kycData?['aadhaar']?['isVerified'] == true;
                       final isPanVerified =
                           kycData?['pan']?['isVerified'] == true;
                       isFullyVerified = isAadhaarVerified && isPanVerified;
                     } else if (userType == 'Organization') {
-                      // For organizations: GST + PAN
                       final isGstVerified =
                           kycData?['gst']?['isVerified'] == true;
                       final isPanVerified =
@@ -481,36 +616,55 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 10,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: isFullyVerified ? Colors.green : Colors.orange,
+                          color:
+                              isFullyVerified
+                                  ? _successColor.withOpacity(0.1)
+                                  : _warningColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color:
+                                isFullyVerified
+                                    ? _successColor.withOpacity(0.3)
+                                    : _warningColor.withOpacity(0.3),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              isFullyVerified ? Icons.verified : Icons.warning,
-                              color: Colors.white,
-                              size: 12,
+                              isFullyVerified
+                                  ? Icons.verified_rounded
+                                  : Icons.warning_rounded,
+                              color:
+                                  isFullyVerified
+                                      ? _successColor
+                                      : _warningColor,
+                              size: 14,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               isFullyVerified
                                   ? 'KYC Verified'
                                   : 'Get KYC Verified',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
+                              style: TextStyle(
+                                color:
+                                    isFullyVerified
+                                        ? _successColor
+                                        : _warningColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.2,
                               ),
                             ),
                             if (!isFullyVerified) ...[
                               const SizedBox(width: 4),
-                              const Icon(
-                                Icons.arrow_forward,
-                                color: Colors.white,
+                              Icon(
+                                Icons.arrow_forward_rounded,
+                                color: _warningColor,
                                 size: 12,
                               ),
                             ],
@@ -528,118 +682,108 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
     );
   }
 
-  Widget _buildSection(String title, List<Widget> items) {
-    Color getBarColor(String title) {
-      switch (title) {
-        case 'Influencer Related':
-          return const Color.fromARGB(255, 142, 45, 246); // Green
-        case 'Store Related':
-          return const Color.fromARGB(255, 142, 45, 246); // Blue
-        case 'Channel Related':
-          return const Color.fromARGB(255, 142, 45, 246); // Orange
-        case 'More':
-          return const Color.fromARGB(255, 142, 45, 246); // Red
-        default:
-          return const Color.fromARGB(255, 142, 45, 246); // Purple
-      }
-    }
-
+  Widget _buildCleanSection(String title, List<Widget> items) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF210E47), // Updated card background color
-        borderRadius: BorderRadius.circular(8),
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title section with highlighting bar
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Text(
+              title,
+              style: TextStyle(
+                color: _textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
               ),
             ),
-            child: Row(
-              children: [
-                // Highlighting bar
-                Container(
-                  width: 4,
-                  height: 32, // Reduced height from 56 to 32
-                  decoration: BoxDecoration(
-                    color: getBarColor(title),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                    ),
-                  ),
-                ),
-                // Title
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
-          // Menu items with dividers
-          ...List.generate(items.length, (index) {
-            return Column(
-              children: [
-                items[index],
-                if (index <
-                    items.length - 1) // Add divider except for last item
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    height: 1,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-              ],
-            );
-          }),
+          ...items,
+          const SizedBox(height: 8),
         ],
       ),
     );
   }
 
-  Widget _buildMenuItem(String title, IconData icon, VoidCallback onTap) {
+  Widget _buildCleanMenuItem(
+    String title,
+    IconData icon,
+    Color accentColor,
+    VoidCallback onTap,
+  ) {
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ), // Reduced horizontal margin
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 8,
-        ), // Reduced horizontal padding
-        leading: Icon(icon, color: Colors.white70, size: 24),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: accentColor, size: 18),
+        ),
         title: Text(
           title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
+          style: TextStyle(
+            color: _textPrimary,
+            fontSize: 15,
             fontWeight: FontWeight.w500,
+            letterSpacing: 0.2,
           ),
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          color: Colors.white54,
-          size: 16,
+        trailing: Icon(
+          Icons.arrow_forward_ios_rounded,
+          color: _textSecondary,
+          size: 14,
         ),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        hoverColor: Colors.white.withOpacity(0.1),
-        splashColor: Colors.white.withOpacity(0.2),
+        hoverColor: Colors.grey.shade50,
+        splashColor: accentColor.withOpacity(0.1),
+      ),
+    );
+  }
+
+  void _showCleanSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        elevation: 4,
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -649,28 +793,83 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF2D1B69),
-          title: const Text('Logout', style: TextStyle(color: Colors.white)),
-          content: const Text(
+          backgroundColor: _cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _errorColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.logout_rounded, color: _errorColor, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Logout',
+                style: TextStyle(
+                  color: _textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
             'Are you sure you want to logout?',
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(color: _textSecondary, fontSize: 15),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
                 'Cancel',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(
+                  color: _textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _performLogout();
-              },
-              child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            Container(
+              decoration: BoxDecoration(
+                color: _errorColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _performLogout();
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Logout',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ),
           ],
         );

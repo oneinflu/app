@@ -21,10 +21,12 @@ class InfluencerProfileDisplayScreen extends StatefulWidget {
 
 class _InfluencerProfileDisplayScreenState
     extends State<InfluencerProfileDisplayScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final ApiService _apiService = ApiService();
   final AuthProvider _authProvider = Get.find<AuthProvider>();
   late TabController _tabController;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   Map<String, dynamic>? _influencerProfile;
   List<dynamic> _rateCards = [];
@@ -46,12 +48,21 @@ class _InfluencerProfileDisplayScreenState
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
     _loadInfluencerData();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -103,90 +114,149 @@ class _InfluencerProfileDisplayScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Help?',
-              style: TextStyle(color: Colors.black, fontSize: 16),
-            ),
-          ),
-        ],
-      ),
+      backgroundColor: AppTheme.backgroundLight,
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
-                children: [
-                  _buildProfileHeader(),
-                  const SizedBox(height: 16),
-                  // Tab Bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        bottom: BorderSide(color: Colors.grey.withOpacity(0.2)),
-                      ),
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      labelColor: AppTheme.primaryPurple,
-                      unselectedLabelColor: Colors.grey,
-                      indicatorColor: AppTheme.primaryPurple,
-                      tabs: const [
-                        Tab(icon: Icon(Icons.person)),
-                        Tab(icon: Icon(Icons.video_library)),
-                      ],
-                    ),
-                  ),
-                  // Tab Bar View
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        // First Tab - Profile Content
-                        SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildAboutSection(),
-                              const SizedBox(height: 24),
-                              _buildConnectedSocialMedia(),
-                              const SizedBox(height: 24),
-                              _buildRateCards(),
-                              const SizedBox(height: 24),
-                              _buildManagedBySection(),
-                            ],
+              ? const Center(
+                child: CircularProgressIndicator(color: AppTheme.primaryColor),
+              )
+             
+        
+              : FadeTransition(
+                opacity: _fadeAnimation,
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    Expanded(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
                           ),
                         ),
-                        // Second Tab - Reels Interface
-                        _buildReelsInterface(),
-                      ],
+                        child: Column(
+                          children: [
+                            _buildTabBar(),
+                            Expanded(
+                              child: TabBarView(
+                                controller: _tabController,
+                                children: [
+                                  // First Tab - Profile Content
+                                  _buildProfileContent(),
+                                  // Second Tab - Reels Interface
+                                  _buildReelsInterface(),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+      decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              TextButton(
+                onPressed: () {},
+                child: const Text(
+                  'Help?',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildProfileHeader(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      height: 50,
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundLight,
+        borderRadius: BorderRadius.circular(25),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          color: AppTheme.primaryColor,
+        ),
+        labelColor: Colors.white,
+        unselectedLabelColor: AppTheme.textSecondary,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        tabs: const [Tab(text: 'Profile'), Tab(text: 'Content')],
+      ),
+    );
+  }
+
+  Widget _buildProfileContent() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAboutSection(),
+          const SizedBox(height: 16),
+          _buildConnectedSocialMedia(),
+          const SizedBox(height: 16),
+          _buildRateCards(),
+          const SizedBox(height: 16),
+          _buildManagedBySection(),
+          const SizedBox(height: 20),
+        ],
+      ),
     );
   }
 
   // New method to build the reels interface
   Widget _buildReelsInterface() {
     return GridView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(16),
+      physics: const BouncingScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 0.8,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
       ),
       itemCount: _unsplashImages.length,
       itemBuilder: (context, index) {
@@ -199,13 +269,13 @@ class _InfluencerProfileDisplayScreenState
           children: [
             // Image
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               child: Image.network(_unsplashImages[index], fit: BoxFit.cover),
             ),
             // Overlay
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -215,13 +285,16 @@ class _InfluencerProfileDisplayScreenState
             ),
             // Shopping bag icon with order count
             Positioned(
-              left: 8,
-              bottom: 8,
+              left: 12,
+              bottom: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -255,30 +328,34 @@ class _InfluencerProfileDisplayScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 80, color: Color(0xFF9E9E9E)),
+          const Icon(
+            Icons.error_outline,
+            size: 80,
+            color: AppTheme.accentCoral,
+          ),
           const SizedBox(height: 16),
           const Text(
             'Error Loading Profile',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF757575),
+              color: AppTheme.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             _error!,
-            style: const TextStyle(color: Color(0xFF9E9E9E)),
+            style: AppTheme.secondaryTextStyle,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: _loadInfluencerData,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryPurple,
+              backgroundColor: AppTheme.primaryColor,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: const Text(
@@ -296,9 +373,7 @@ class _InfluencerProfileDisplayScreenState
 
   Widget _buildProfileHeader() {
     final userData = _authProvider.user.value;
-    final username =
-        userData?['username'] ??
-        'username'; // Changed from 'name' to 'username'
+    final username = userData?['username'] ?? 'username';
     final profileUrl = userData?['profileURL'];
 
     // Add the missing variable declarations with safe type conversion
@@ -308,117 +383,103 @@ class _InfluencerProfileDisplayScreenState
         _influencerProfile?['followingCount']?.toString() ?? '81';
     final dealsCount = _influencerProfile?['dealsCount']?.toString() ?? '10';
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundImage:
-                    profileUrl != null
-                        ? NetworkImage(profileUrl)
-                        : const AssetImage('assets/images/bksaraf.png')
-                            as ImageProvider,
+    return Column(
+      children: [
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 40,
+              backgroundImage:
+                  profileUrl != null
+                      ? NetworkImage(profileUrl)
+                      : const AssetImage('assets/images/bksaraf.png')
+                          as ImageProvider,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    username,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _buildStatItem(followersCount, 'Followers'),
+                      const SizedBox(width: 24),
+                      _buildStatItem(followingCount, 'Following'),
+                      const SizedBox(width: 24),
+                      _buildStatItem(dealsCount, 'Deals'),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      username, // Changed from 'name' to 'username'
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ShareProfileScreen(),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _buildStatItem(followersCount, 'Followers'),
-                        const SizedBox(width: 24),
-                        _buildStatItem(followingCount, 'Following'),
-                        const SizedBox(width: 24),
-                        _buildStatItem(dealsCount, 'Deals'),
-                      ],
-                    ),
-                  ],
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Share Profile',
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ShareProfileScreen(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryPurple,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => const InfluencerProfileSetupScreen(),
                     ),
-                  ),
-                  child: const Text(
-                    'Share Profile',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ).then((_) => _loadInfluencerData());
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withOpacity(0.8)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => const InfluencerProfileSetupScreen(),
-                      ),
-                    ).then((_) => _loadInfluencerData());
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.black,
-                    side: const BorderSide(color: Colors.grey),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Manage Profile',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
+                child: const Text(
+                  'Manage Profile',
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -430,17 +491,12 @@ class _InfluencerProfileDisplayScreenState
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: Colors.white,
           ),
         ),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(
-              0xFF757575,
-            ), // Direct color instead of Colors.grey[600]
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8)),
         ),
       ],
     );
@@ -475,7 +531,7 @@ class _InfluencerProfileDisplayScreenState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: AppTheme.primaryColor.withOpacity(0.05),
             spreadRadius: 1,
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -485,40 +541,60 @@ class _InfluencerProfileDisplayScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'About',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(bio, style: const TextStyle(fontSize: 14, color: Colors.black)),
-          const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.location_on, size: 16, color: Colors.grey),
-              const SizedBox(width: 4),
+              Icon(
+                Icons.person_outline,
+                size: 20,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 8),
               Text(
-                location,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF757575)),
+                'About',
+                style: AppTheme.headlineStyle.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(fontSize: 14, color: Colors.black),
-          ),
+          const SizedBox(height: 16),
+          Text(bio, style: AppTheme.bodyTextStyle.copyWith(fontSize: 14)),
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.business, size: 16, color: Colors.grey),
+              const Icon(
+                Icons.location_on,
+                size: 16,
+                color: AppTheme.textSecondary,
+              ),
               const SizedBox(width: 4),
               Text(
-                'Collaborated with: ${brands.take(3).join(', ')}${brands.length > 3 ? ' many more...' : ''}',
-                style: const TextStyle(fontSize: 14, color: Color(0xFF757575)),
+                location,
+                style: AppTheme.secondaryTextStyle.copyWith(fontSize: 14),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            description,
+            style: AppTheme.bodyTextStyle.copyWith(fontSize: 14),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.business,
+                size: 16,
+                color: AppTheme.textSecondary,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  'Collaborated with: ${brands.take(3).join(', ')}${brands.length > 3 ? ' many more...' : ''}',
+                  style: AppTheme.secondaryTextStyle.copyWith(fontSize: 14),
+                ),
               ),
             ],
           ),
@@ -559,7 +635,7 @@ class _InfluencerProfileDisplayScreenState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: AppTheme.primaryColor.withOpacity(0.05),
             spreadRadius: 1,
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -569,13 +645,18 @@ class _InfluencerProfileDisplayScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Connected Social Media',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
+          Row(
+            children: [
+              Icon(Icons.link, size: 20, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                'Connected Social Media',
+                style: AppTheme.headlineStyle.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           ...socialAccounts.map((account) => _buildSocialMediaItem(account)),
@@ -601,10 +682,9 @@ class _InfluencerProfileDisplayScreenState
           Expanded(
             child: Text(
               account['username'],
-              style: const TextStyle(
+              style: AppTheme.bodyTextStyle.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.black,
               ),
             ),
           ),
@@ -618,7 +698,7 @@ class _InfluencerProfileDisplayScreenState
                 ),
               );
             },
-            activeColor: AppTheme.primaryPurple,
+            activeColor: AppTheme.primaryColor,
           ),
         ],
       ),
@@ -633,7 +713,7 @@ class _InfluencerProfileDisplayScreenState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: AppTheme.primaryColor.withOpacity(0.05),
             spreadRadius: 1,
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -646,13 +726,22 @@ class _InfluencerProfileDisplayScreenState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Rate Cards',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+              Row(
+                children: [
+                  Icon(
+                    Icons.credit_card,
+                    size: 20,
+                    color: AppTheme.primaryColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Rate Cards',
+                    style: AppTheme.headlineStyle.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
               TextButton(
                 onPressed: () {
@@ -663,6 +752,9 @@ class _InfluencerProfileDisplayScreenState
                     ),
                   ).then((_) => _loadInfluencerData());
                 },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryColor,
+                ),
                 child: const Text('Manage'),
               ),
             ],
@@ -670,9 +762,10 @@ class _InfluencerProfileDisplayScreenState
           const SizedBox(height: 16),
           // Updated to horizontal scrollable list
           SizedBox(
-            height: 32,
+            height: 36,
             child: ListView(
               scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               children: [
                 _buildPlatformChip('All Platforms', true),
                 const SizedBox(width: 8),
@@ -713,16 +806,18 @@ class _InfluencerProfileDisplayScreenState
 
   Widget _buildPlatformChip(String label, bool isSelected) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? AppTheme.primaryPurple : const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(16),
+        color: isSelected ? AppTheme.primaryColor : AppTheme.backgroundLight,
+        borderRadius: BorderRadius.circular(20),
+        border: isSelected ? null : Border.all(color: AppTheme.dividerColor),
       ),
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 12,
-          color: isSelected ? Colors.white : const Color(0xFF757575),
+          fontSize: 13,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          color: isSelected ? Colors.white : AppTheme.textSecondary,
         ),
       ),
     );
@@ -738,9 +833,9 @@ class _InfluencerProfileDisplayScreenState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: AppTheme.dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -751,37 +846,36 @@ class _InfluencerProfileDisplayScreenState
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: AppTheme.bodyTextStyle.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
                   ),
                 ),
               ),
               IconButton(
                 onPressed: () {},
                 icon: const Icon(Icons.edit, size: 20),
-                color: const Color(0xFF757575),
+                color: AppTheme.textSecondary,
               ),
             ],
           ),
           Text(
             price,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.green,
+              color: AppTheme.accentMint,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             description,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF616161)),
+            style: AppTheme.bodyTextStyle.copyWith(fontSize: 14),
           ),
           const SizedBox(height: 4),
           Text(
             delivery,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
+            style: AppTheme.secondaryTextStyle.copyWith(fontSize: 12),
           ),
           const SizedBox(height: 8),
           Row(
@@ -793,7 +887,7 @@ class _InfluencerProfileDisplayScreenState
                         child: Icon(
                           icon,
                           size: 16,
-                          color: const Color(0xFF757575),
+                          color: AppTheme.textSecondary,
                         ),
                       ),
                     )
@@ -812,7 +906,7 @@ class _InfluencerProfileDisplayScreenState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: AppTheme.primaryColor.withOpacity(0.05),
             spreadRadius: 1,
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -824,27 +918,26 @@ class _InfluencerProfileDisplayScreenState
         children: [
           const Text(
             'Managed By',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: const Color(0xFFE0E0E0),
-                child: const Icon(Icons.person, color: Colors.grey, size: 20),
+                backgroundColor: AppTheme.backgroundLight,
+                child: const Icon(
+                  Icons.person,
+                  color: AppTheme.textSecondary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Self Managed',
-                style: TextStyle(
+                style: AppTheme.bodyTextStyle.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black,
                 ),
               ),
             ],

@@ -99,19 +99,82 @@ class _VerificationScreenState extends State<VerificationScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Back Button
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.dividerColor, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 20,
+                ),
+              ),
+            ),
+            // Notification Bell Icon
+            GestureDetector(
+              onTap: () {
+                _showNotificationModal();
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.dividerColor, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        color: AppTheme.primaryColor,
+                        size: 20,
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentCoral,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        title: const Text(
-          'Get Verified',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -423,6 +486,70 @@ class _VerificationScreenState extends State<VerificationScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showNotificationModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.dividerColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Icon(
+                  Icons.notifications_outlined,
+                  color: AppTheme.primaryColor,
+                  size: 48,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Notifications',
+                  style: AppTheme.headlineStyle.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Stay updated with the latest opportunities and updates',
+                  style: AppTheme.secondaryTextStyle,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.dividerColor),
+                  ),
+                  child: Text(
+                    'No new notifications',
+                    style: AppTheme.secondaryTextStyle,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
     );
   }
 }

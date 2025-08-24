@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:influnew/help_page.dart';
 import 'app_theme.dart';
 import 'otp_verification_screen.dart';
 import 'providers/auth_provider.dart';
@@ -12,7 +13,7 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialize the controller
     final LoginController controller = Get.put(LoginController());
-    
+
     return GestureDetector(
       onTap: () {
         // Dismiss keyboard when tapping outside the text field
@@ -28,7 +29,12 @@ class LoginScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
               child: TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HelpPage()),
+                  );
+                },
                 child: const Text(
                   'Help?',
                   style: TextStyle(color: Colors.black87, fontSize: 14),
@@ -123,15 +129,21 @@ class LoginScreen extends StatelessWidget {
               ),
 
               // Error message
-              Obx(() => controller.errorMessage.value.isNotEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        controller.errorMessage.value,
-                        style: const TextStyle(color: Colors.red, fontSize: 12),
-                      ),
-                    )
-                  : const SizedBox.shrink()),
+              Obx(
+                () =>
+                    controller.errorMessage.value.isNotEmpty
+                        ? Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            controller.errorMessage.value,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        )
+                        : const SizedBox.shrink(),
+              ),
 
               const SizedBox(height: 16),
 
@@ -139,11 +151,13 @@ class LoginScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Obx(() => Switch(
-                        value: controller.getWhatsAppUpdates.value,
-                        onChanged: (value) => controller.toggleWhatsAppUpdates(),
-                        activeColor: AppTheme.primaryPurple,
-                      )),
+                  Obx(
+                    () => Switch(
+                      value: controller.getWhatsAppUpdates.value,
+                      onChanged: (value) => controller.toggleWhatsAppUpdates(),
+                      activeColor: AppTheme.primaryPurple,
+                    ),
+                  ),
                   const Text(
                     'Get WhatsApp Updates',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -159,19 +173,24 @@ class LoginScreen extends StatelessWidget {
                 child: SizedBox(
                   width: double.infinity,
                   height: 50,
-                  child: Obx(() => ElevatedButton(
-                        onPressed: controller.isLoading.value
-                            ? null
-                            : () => controller.sendOtp(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryPurple,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                  child: Obx(
+                    () => ElevatedButton(
+                      onPressed:
+                          controller.isLoading.value
+                              ? null
+                              : () => controller.sendOtp(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryPurple,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: controller.isLoading.value
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text(
+                      ),
+                      child:
+                          controller.isLoading.value
+                              ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                              : const Text(
                                 'Send OTP',
                                 style: TextStyle(
                                   fontSize: 16,
@@ -179,7 +198,8 @@ class LoginScreen extends StatelessWidget {
                                   color: Colors.white,
                                 ),
                               ),
-                      )),
+                    ),
+                  ),
                 ),
               ),
 
@@ -210,28 +230,28 @@ class LoginController extends GetxController {
   final isLoading = false.obs;
   final errorMessage = ''.obs;
   final AuthProvider authProvider = Get.find<AuthProvider>();
-  
+
   void toggleWhatsAppUpdates() {
     getWhatsAppUpdates.value = !getWhatsAppUpdates.value;
   }
-  
+
   Future<void> sendOtp() async {
     if (phoneController.text.isEmpty) {
       errorMessage.value = 'Please enter your phone number';
       return;
     }
-    
+
     if (phoneController.text.length != 10) {
       errorMessage.value = 'Please enter a valid 10-digit phone number';
       return;
     }
-    
+
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       final result = await authProvider.sendOtp(phoneController.text);
-      
+
       if (result['success']) {
         Get.to(() => OtpVerificationScreen(phoneNumber: phoneController.text));
       } else {
@@ -244,7 +264,7 @@ class LoginController extends GetxController {
       isLoading.value = false;
     }
   }
-  
+
   @override
   void onClose() {
     phoneController.dispose();

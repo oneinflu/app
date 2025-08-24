@@ -3,12 +3,14 @@ import 'package:influnew/widgets/pages/create_store_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../app_theme.dart';
 import '../../services/instagram_service.dart';
+import 'channel_creation_screen.dart';
+import 'create_influencer_profile_screen.dart';
 import 'instagram_auth_screen.dart';
 import 'profile_management_screen.dart';
-import '../pages/influencer_profile_setup_screen.dart';
+import 'store_creation_screen.dart';
 
 class SocialMediaConnectionScreen extends StatefulWidget {
-  final String? sourceFlow; // Add this parameter
+  final String? sourceFlow;
 
   const SocialMediaConnectionScreen({Key? key, this.sourceFlow})
     : super(key: key);
@@ -28,7 +30,6 @@ class _SocialMediaConnectionScreenState
     'facebook': false,
     'twitter': false,
     'tiktok': false,
-    'linkedin': false,
   };
 
   final Map<String, String> _accountHandles = {
@@ -37,7 +38,6 @@ class _SocialMediaConnectionScreenState
     'facebook': '',
     'twitter': '',
     'tiktok': '',
-    'linkedin': '',
   };
 
   final Map<String, Map<String, dynamic>> _accountData = {
@@ -46,7 +46,6 @@ class _SocialMediaConnectionScreenState
     'facebook': {},
     'twitter': {},
     'tiktok': {},
-    'linkedin': {},
   };
 
   @override
@@ -69,6 +68,32 @@ class _SocialMediaConnectionScreenState
     }
   }
 
+  void _continueToNextStep() {
+    print('sourceFlow: ${widget.sourceFlow}');
+    // Determine the next screen based on sourceFlow
+    Widget nextScreen;
+    switch (widget.sourceFlow) {
+      case 'partner':
+        nextScreen = const CreateInfluencerProfileScreen();
+        break;
+      case 'store_creation':
+        nextScreen = const StoreCreationScreen();
+        break;
+      case 'channel':
+        nextScreen = const ChannelCreationScreen();
+        break;
+      default:
+        // Default to profile management if no specific flow
+        nextScreen = const ProfileManagementScreen();
+        break;
+    }
+
+    // Navigate to the next screen
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => nextScreen));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,13 +101,79 @@ class _SocialMediaConnectionScreenState
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'Connect Social Media',
-          style: TextStyle(color: Colors.black),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.dividerColor, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 20,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                _showNotificationModal(context);
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.dividerColor, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        color: AppTheme.primaryColor,
+                        size: 20,
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentCoral,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       body: SingleChildScrollView(
@@ -105,7 +196,7 @@ class _SocialMediaConnectionScreenState
             ),
             const SizedBox(height: 30),
 
-            // Instagram
+            // Social Media Cards
             _buildSocialMediaCard(
               platform: 'instagram',
               title: 'Instagram',
@@ -116,7 +207,6 @@ class _SocialMediaConnectionScreenState
             ),
             const SizedBox(height: 16),
 
-            // YouTube
             _buildSocialMediaCard(
               platform: 'youtube',
               title: 'YouTube',
@@ -127,7 +217,6 @@ class _SocialMediaConnectionScreenState
             ),
             const SizedBox(height: 16),
 
-            // Facebook
             _buildSocialMediaCard(
               platform: 'facebook',
               title: 'Facebook',
@@ -138,7 +227,6 @@ class _SocialMediaConnectionScreenState
             ),
             const SizedBox(height: 16),
 
-            // Twitter
             _buildSocialMediaCard(
               platform: 'twitter',
               title: 'Twitter',
@@ -149,7 +237,6 @@ class _SocialMediaConnectionScreenState
             ),
             const SizedBox(height: 16),
 
-            // TikTok
             _buildSocialMediaCard(
               platform: 'tiktok',
               title: 'TikTok',
@@ -157,17 +244,6 @@ class _SocialMediaConnectionScreenState
               icon: Icons.music_note,
               color: const Color(0xFF000000),
               followerCount: '2.1M followers',
-            ),
-            const SizedBox(height: 16),
-
-            // LinkedIn
-            _buildSocialMediaCard(
-              platform: 'linkedin',
-              title: 'LinkedIn',
-              subtitle: 'Connect your LinkedIn profile',
-              icon: Icons.business,
-              color: const Color(0xFF0A66C2),
-              followerCount: '50K connections',
             ),
             const SizedBox(height: 40),
 
@@ -185,7 +261,7 @@ class _SocialMediaConnectionScreenState
                   disabledBackgroundColor: Colors.grey[300],
                 ),
                 child: Text(
-                  'Continue (${_getConnectedCount()}/6 connected)',
+                  'Continue (${_getConnectedCount()}/5 connected)',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -204,22 +280,7 @@ class _SocialMediaConnectionScreenState
               width: double.infinity,
               height: 50,
               child: TextButton(
-                onPressed: () {
-                  if (widget.sourceFlow == 'store_creation') {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const CreateStoreScreen(),
-                      ),
-                    );
-                  } else {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder:
-                            (context) => const InfluencerProfileSetupScreen(),
-                      ),
-                    );
-                  }
-                },
+                onPressed: _continueToNextStep, // Use the same navigation logic
                 child: const Text(
                   'Skip for now',
                   style: TextStyle(fontSize: 16, color: Colors.grey),
@@ -262,7 +323,6 @@ class _SocialMediaConnectionScreenState
       ),
       child: Row(
         children: [
-          // Platform Icon
           Container(
             width: 50,
             height: 50,
@@ -286,7 +346,6 @@ class _SocialMediaConnectionScreenState
           ),
           const SizedBox(width: 16),
 
-          // Platform Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,7 +375,6 @@ class _SocialMediaConnectionScreenState
             ),
           ),
 
-          // Connect/Connected Button
           GestureDetector(
             onTap: () => _toggleConnection(platform),
             child: Container(
@@ -351,7 +409,6 @@ class _SocialMediaConnectionScreenState
 
   void _toggleConnection(String platform) {
     if (_connectedAccounts[platform] == true) {
-      // Disconnect
       if (platform == 'instagram') {
         _disconnectInstagram();
       } else {
@@ -362,7 +419,6 @@ class _SocialMediaConnectionScreenState
         });
       }
     } else {
-      // Connect
       if (platform == 'instagram') {
         _connectInstagram();
       } else {
@@ -473,7 +529,6 @@ class _SocialMediaConnectionScreenState
                   });
                   Navigator.of(context).pop();
 
-                  // Show success message
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -506,14 +561,51 @@ class _SocialMediaConnectionScreenState
     return _connectedAccounts.values.where((connected) => connected).length;
   }
 
-  void _continueToNextStep() {
-    // Save connected accounts data
-    final connectedData = {
-      'connectedAccounts': _connectedAccounts,
-      'accountHandles': _accountHandles,
-    };
-
-    // Navigate back with data or to next screen
-    Navigator.of(context).pop(connectedData);
+  void _showNotificationModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.dividerColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Icon(
+                  Icons.notifications_outlined,
+                  color: AppTheme.primaryColor,
+                  size: 48,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Notifications',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryPurple,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'No new notifications',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+    );
   }
 }

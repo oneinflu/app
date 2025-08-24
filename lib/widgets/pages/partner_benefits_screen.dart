@@ -8,88 +8,154 @@ class PartnerBenefitsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.purpleGradient),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              _buildTitle(),
-              _buildBenefitsSection(),
-              _buildBecomePartnerButton(context),
-              _buildFootnote(),
-            ],
-          ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Back Button
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.dividerColor, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 20,
+                ),
+              ),
+            ),
+
+            // Notification Bell Icon
+            GestureDetector(
+              onTap: () {
+                _showNotificationModal(context);
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.dividerColor, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        color: AppTheme.primaryColor,
+                        size: 20,
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentCoral,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    _buildTitle(),
+                    _buildBenefitsSection(),
+                    _buildStatsSection(),
+                    _buildBecomePartnerButton(context),
+                    _buildFootnote(),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16.0, top: 16.0),
-      child: GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      color: Colors.white,
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
+            padding: EdgeInsets.zero,
+          ),
+
+          const SizedBox(width: 40),
+        ],
       ),
     );
   }
 
   Widget _buildTitle() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 5.0),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
+      decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Logo
-          Center(
-            child: Image.asset(
-              'assets/images/logo.png',
-              height: 40,
-              errorBuilder: (context, error, stackTrace) {
-                return const Text(
-                  'influ',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
-                );
-              },
+          const Icon(Icons.star_outline, color: Colors.white, size: 48),
+          const SizedBox(height: 24),
+          const Text(
+            'PREMIUM PARTNER',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
             ),
           ),
-          const SizedBox(height: 5),
-          // Partner text in gold
-          const Center(
-            child: Text(
-              'Partner',
-              style: TextStyle(
-                color: Color(0xFFFFD700), // Gold color
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-              ),
+          const SizedBox(height: 12),
+          Text(
+            'Join our exclusive community of verified partners',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 15,
             ),
-          ),
-          const SizedBox(height: 10),
-          // Our Benefits with stars
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.star, color: Color(0xFFFFD700), size: 24),
-              SizedBox(width: 10),
-              Text(
-                'OUR BENEFITS',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              SizedBox(width: 10),
-              Icon(Icons.star, color: Color(0xFFFFD700), size: 24),
-            ],
           ),
         ],
       ),
@@ -97,64 +163,45 @@ class PartnerBenefitsScreen extends StatelessWidget {
   }
 
   Widget _buildBenefitsSection() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 10.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF341969).withOpacity(0.8),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _buildBenefitItem(
-                  icon: Icons.monetization_on,
-                  title: '0% Commission on Brand Deals',
-                  description:
-                      'Keep 100% of your earnings from direct collaborations.',
-                  assetPath: 'assets/images/icons/compass 5.png',
-                ),
-                const Divider(
-                  color: Colors.white24,
-                  height: 30,
-                  thickness: 0.5,
-                ),
-                _buildBenefitItem(
-                  icon: Icons.handshake,
-                  title: 'Direct Business Proposals',
-                  description:
-                      'Skip agencies — get offers straight from verified businesses.',
-                  assetPath: 'assets/images/icons/compass 7.png',
-                ),
-                const Divider(
-                  color: Colors.white24,
-                  height: 30,
-                  thickness: 0.5,
-                ),
-                _buildBenefitItem(
-                  icon: Icons.block,
-                  title: 'No Middlemen, No Delays',
-                  description:
-                      'No agency cuts, no pending payments, just clean transactions.',
-                  assetPath: 'assets/images/icons/compass 8.png',
-                ),
-                const Divider(
-                  color: Colors.white24,
-                  height: 30,
-                  thickness: 0.5,
-                ),
-                _buildBenefitItem(
-                  icon: Icons.verified,
-                  title: 'Lifetime Verified Badge (Early Joiners)',
-                  description: 'Be recognized as an original INFLU Creator.',
-                  assetPath: 'assets/images/icons/compass 6.png',
-                ),
-              ],
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Benefits',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
             ),
           ),
-        ),
+          const SizedBox(height: 20),
+          _buildBenefitItem(
+            icon: Icons.monetization_on_outlined,
+            title: '0% Commission',
+            description: 'Keep 100% of your earnings',
+            color: AppTheme.primaryColor,
+          ),
+          _buildBenefitItem(
+            icon: Icons.handshake_outlined,
+            title: 'Direct Business',
+            description: 'Get proposals from verified brands',
+            color: AppTheme.secondaryColor,
+          ),
+          _buildBenefitItem(
+            icon: Icons.verified_outlined,
+            title: 'Verified Status',
+            description: 'Stand out with verified badge',
+            color: AppTheme.accentCoral,
+          ),
+          _buildBenefitItem(
+            icon: Icons.analytics_outlined,
+            title: 'Analytics',
+            description: 'Track performance in real-time',
+            color: AppTheme.accentMint,
+          ),
+        ],
       ),
     );
   }
@@ -163,50 +210,43 @@ class PartnerBenefitsScreen extends StatelessWidget {
     required IconData icon,
     required String title,
     required String description,
-    required String assetPath,
+    required Color color,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 45,
-            height: 45,
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Center(
-              child: Image.asset(
-                assetPath,
-                width: 28,
-                height: 28,
-                color: Colors.white,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(icon, color: Colors.white, size: 28);
-                },
-              ),
-            ),
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(width: 15),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
                     fontSize: 13,
                   ),
                 ),
@@ -218,56 +258,163 @@ class PartnerBenefitsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildStatsSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.dividerColor),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem('500+', 'Partners'),
+          Container(width: 1, height: 40, color: AppTheme.dividerColor),
+          _buildStatItem('₹50L+', 'Earnings'),
+          Container(width: 1, height: 40, color: AppTheme.dividerColor),
+          _buildStatItem('1000+', 'Deals'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            color: AppTheme.primaryColor,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
   Widget _buildBecomePartnerButton(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-      child: SizedBox(
-        width: double.infinity,
-        height: 50,
-        child: ElevatedButton(
-          onPressed: () {
-            // Navigate to verification screen instead of KYC
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const VerificationScreen(sourceScreen: 'partner'),
-              ),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: AppTheme.primaryPurple,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
+    return Container(
+      margin: const EdgeInsets.all(24),
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) =>
+                      const VerificationScreen(sourceScreen: 'partner'),
             ),
-            elevation: 0,
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.secondaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
           ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Become Our Partner',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(width: 8),
-              Icon(Icons.arrow_forward, size: 18),
-            ],
-          ),
+        ),
+        child: const Text(
+          'Become a Partner',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
 
   Widget _buildFootnote() {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 10.0),
-      child: Center(
-        child: Text(
-          '*After 6 months ₹1000/m subscription. Lifetime 0% commission on any order',
-          style: TextStyle(color: Colors.white70, fontSize: 10),
-          textAlign: TextAlign.center,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      child: RichText(
+        textAlign: TextAlign.center,
+        text: TextSpan(
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          children: [
+            const TextSpan(text: 'By becoming a partner, you agree to our '),
+            TextSpan(
+              text: 'Terms & Conditions',
+              style: TextStyle(
+                color: AppTheme.secondaryColor,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  void _showNotificationModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.dividerColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Icon(
+                  Icons.notifications_outlined,
+                  color: AppTheme.primaryColor,
+                  size: 48,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Notifications',
+                  style: AppTheme.headlineStyle.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Stay updated with the latest opportunities and updates',
+                  style: AppTheme.secondaryTextStyle,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.dividerColor),
+                  ),
+                  child: Text(
+                    'No new notifications',
+                    style: AppTheme.secondaryTextStyle,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
     );
   }
 }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:influnew/login_screen.dart';
+import 'package:influnew/terms_page.dart';
+import 'package:influnew/policy_page.dart';
+import 'package:influnew/wallet_terms_page.dart';
 import 'app_theme.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -121,34 +124,6 @@ class WelcomeScreen extends StatelessWidget {
                         ),
 
                         // Continue with Google button - using local asset
-                        Container(
-                          width: double.infinity,
-                          height: 50,
-                          margin: const EdgeInsets.only(bottom: 30),
-                          child: OutlinedButton.icon(
-                            icon: Image.asset(
-                              'assets/images/google.png',
-                              width: 20,
-                              height: 20,
-                            ),
-                            label: const Text(
-                              'Continue with Google',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.black12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                            ),
-                            onPressed: () {
-                              // Handle Google login
-                            },
-                          ),
-                        ),
 
                         // Terms text
                         const Text(
@@ -159,7 +134,14 @@ class WelcomeScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const TermsPage(),
+                                  ),
+                                );
+                              },
                               style: TextButton.styleFrom(
                                 minimumSize: Size.zero,
                                 padding: EdgeInsets.zero,
@@ -182,7 +164,14 @@ class WelcomeScreen extends StatelessWidget {
                               ),
                             ),
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const PolicyPage(),
+                                  ),
+                                );
+                              },
                               style: TextButton.styleFrom(
                                 minimumSize: Size.zero,
                                 padding: EdgeInsets.zero,
@@ -205,7 +194,14 @@ class WelcomeScreen extends StatelessWidget {
                               ),
                             ),
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const WalletTermsPage(),
+                                  ),
+                                );
+                              },
                               style: TextButton.styleFrom(
                                 minimumSize: Size.zero,
                                 padding: EdgeInsets.zero,

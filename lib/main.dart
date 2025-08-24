@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:influnew/providers/store_provider.dart';
 import 'package:influnew/welcome_screen.dart';
+import 'package:influnew/widgets/pages/product_detail_page.dart';
 import 'login_screen.dart';
 import 'package:influnew/home_screen.dart';
 import 'animated_splash_screen.dart';
@@ -23,14 +24,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Influu',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: const AuthCheckScreen(),
-      // In your MaterialApp widget
-      routes: {'/welcome': (context) => const WelcomeScreen()},
+      routes: {
+        '/welcome': (context) => const WelcomeScreen(),
+        '/product_detail_page':
+            (context) => const ProductDetailPage(), // Add this line
+      },
     );
   }
 }
