@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:influnew/widgets/pages/create_store_screen.dart';
 import '../../services/api_service.dart';
 import '../../app_theme.dart';
 import 'store_details_screen.dart';
@@ -30,7 +31,7 @@ class _StoresScreenState extends State<StoresScreen> {
       });
 
       final response = await _apiService.get('/api/users/stores');
-      
+
       if (response.success && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
         if (responseData['success'] == true && responseData['stores'] != null) {
@@ -58,57 +59,62 @@ class _StoresScreenState extends State<StoresScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+      elevation: 0,
+      centerTitle: true,
+      title: const Text(
+        'Your Stores',
+        style: TextStyle(
+          color: AppTheme.textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                // Add store functionality
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[200],
-                foregroundColor: Colors.black,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      leading: IconButton(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.backgroundLight,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            Icons.arrow_back,
+            color: AppTheme.textPrimary,
+            size: 20,
+          ),
+        ),
+        onPressed: () => Navigator.pop(context),
+      ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundLight,
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Add Store',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(Icons.add, size: 16),
-                ],
+              child: const Icon(
+                Icons.add,
+                color: AppTheme.primaryColor,
+                size: 20,
               ),
             ),
+            onPressed: () {
+              // Navigate to store creation screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateStoreScreen(),
+                ),
+              );
+            },
           ),
-        ],
-        title: null,
-        centerTitle: false,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _fetchStores,
-        child: _buildBody(),
-      ),
+        ),
+      ],
     );
   }
 
@@ -116,7 +122,7 @@ class _StoresScreenState extends State<StoresScreen> {
     if (isLoading) {
       return const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryPurple),
+          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
         ),
       );
     }
@@ -126,17 +132,13 @@ class _StoresScreenState extends State<StoresScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.error_outline, size: 64, color: AppTheme.textSecondary),
             const SizedBox(height: 16),
             Text(
               errorMessage!,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: AppTheme.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -144,8 +146,15 @@ class _StoresScreenState extends State<StoresScreen> {
             ElevatedButton(
               onPressed: _fetchStores,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryPurple,
+                backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('Retry'),
             ),
@@ -159,130 +168,167 @@ class _StoresScreenState extends State<StoresScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.store_outlined,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.store_outlined, size: 64, color: AppTheme.textSecondary),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'No stores found',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Create your first store to get started',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
+              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateStoreScreen(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
+              child: const Text('Create Store'),
             ),
           ],
         ),
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Your Stores',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.builder(
-              itemCount: stores.length,
-              itemBuilder: (context, index) {
-                final store = stores[index];
-                return _buildStoreListItem(store);
-              },
-            ),
-          ),
-        ],
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: stores.length,
+      itemBuilder: (context, index) {
+        final store = stores[index];
+        return _buildStoreCard(store);
+      },
     );
   }
 
-  Widget _buildStoreListItem(Map<String, dynamic> store) {
+  Widget _buildStoreCard(Map<String, dynamic> store) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.dividerColor),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: InkWell(
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => StoreDetailsScreen(
-                storeId: store['_id'],
-              ),
+              builder: (context) => StoreDetailsScreen(storeId: store['_id']),
             ),
           );
         },
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Store Icon
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Icon(
-                  Icons.storefront,
-                  color: Colors.grey[700],
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Store Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      store['storeName'] ?? 'Unnamed Store',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundLight,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _getStoreType(store),
+                    child: Icon(
+                      Icons.storefront,
+                      color: AppTheme.primaryColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          store['storeName'] ?? 'Unnamed Store',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _getStoreType(store),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          (store['isActive'] == true)
+                              ? AppTheme.accentMint.withOpacity(0.1)
+                              : AppTheme.accentCoral.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      (store['isActive'] == true) ? 'Active' : 'Inactive',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w600,
+                        color:
+                            (store['isActive'] == true)
+                                ? AppTheme.accentMint
+                                : AppTheme.accentCoral,
                       ),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              if (store['description'] != null &&
+                  store['description'].toString().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  store['description'],
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.textSecondary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              // Arrow Icon
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey[400],
-                size: 16,
-              ),
+              ],
             ],
           ),
         ),
@@ -291,7 +337,6 @@ class _StoresScreenState extends State<StoresScreen> {
   }
 
   String _getStoreType(Map<String, dynamic> store) {
-    // This is a placeholder - you should replace with actual store type logic
     if (store['storeType'] != null) {
       return store['storeType'];
     } else if (store['isService'] == true) {
@@ -301,5 +346,14 @@ class _StoresScreenState extends State<StoresScreen> {
     } else {
       return 'Retail Store';
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: _buildAppBar(),
+      body: _buildBody(),
+    );
   }
 }

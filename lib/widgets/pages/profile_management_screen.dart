@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:influnew/widgets/pages/available_slots_management_screen.dart';
 import 'package:influnew/widgets/pages/channel_benefits_screen.dart';
 import 'package:influnew/widgets/pages/channel_creation_screen.dart';
+import 'package:influnew/widgets/pages/channels_screen.dart';
 import 'package:influnew/widgets/pages/influencer_profile_display_screen.dart';
 import 'package:influnew/widgets/pages/invite_followers_screen.dart';
 import 'package:influnew/widgets/pages/partner_benefits_screen.dart';
@@ -14,7 +15,9 @@ import 'package:influnew/widgets/pages/store_benefits_screen.dart';
 import 'package:influnew/widgets/pages/store_creation_screen.dart';
 import 'package:influnew/widgets/pages/products_services_management_screen.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:influnew/widgets/pages/store_faq_screen.dart';
 import 'package:influnew/widgets/pages/stores_screen.dart';
+import 'package:influnew/widgets/pages/subscription_management_screen.dart';
 import '../../app_theme.dart';
 import '../../home_screen.dart';
 import 'connected_accounts_screen.dart';
@@ -258,28 +261,32 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen>
                           Icons.help_outline_rounded,
                           _textSecondary,
                           () {
-                            _showCleanSnackBar(
-                              'FAQ section coming soon!',
-                              _primaryColor,
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const StoreFAQScreen(),
+                              ),
                             );
                           },
                         ),
                       ]),
                       const SizedBox(height: 20),
-                      _buildCleanSection('Channel Hub', [
+                      _buildCleanSection('Academy', [
                         _buildCleanMenuItem(
-                          'View All Channels',
+                          'View All Courses',
                           Icons.tv_rounded,
                           const Color(0xFF9F7AEA),
                           () {
-                            _showCleanSnackBar(
-                              'Channels list coming soon!',
-                              _primaryColor,
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ChannelsScreen(),
+                              ),
                             );
                           },
                         ),
                         _buildCleanMenuItem(
-                          'Channel Benefits',
+                          'Academy Benefits',
                           Icons.star_rounded,
                           const Color(0xFFD69E2E),
                           () {
@@ -296,7 +303,7 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen>
                       const SizedBox(height: 20),
                       _buildCleanSection('Account & Settings', [
                         _buildCleanMenuItem(
-                          'Manage Social Accounts',
+                          'Manage Subscriptions',
                           Icons.share_rounded,
                           const Color(0xFF4299E1),
                           () {
@@ -305,24 +312,12 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen>
                               MaterialPageRoute(
                                 builder:
                                     (context) =>
-                                        const ConnectedAccountsScreen(),
+                                        const SubscriptionManagementScreen(),
                               ),
                             );
                           },
                         ),
-                        _buildCleanMenuItem(
-                          'Manage Payment Methods',
-                          Icons.payment_rounded,
-                          const Color(0xFF38B2AC),
-                          () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const WalletScreen(),
-                              ),
-                            );
-                          },
-                        ),
+
                         _buildCleanMenuItem(
                           'About',
                           Icons.info_outline_rounded,
@@ -792,86 +787,110 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen>
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: _cardColor,
+        return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
           ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: _errorColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: _cardColor,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-                child: Icon(Icons.logout_rounded, color: _errorColor, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Logout',
-                style: TextStyle(
-                  color: _textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            'Are you sure you want to logout?',
-            style: TextStyle(color: _textSecondary, fontSize: 15),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: _textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              ],
             ),
-            Container(
-              decoration: BoxDecoration(
-                color: _errorColor,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _performLogout();
-                },
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _errorColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                  child: Icon(
+                    Icons.logout_rounded,
+                    color: _errorColor,
+                    size: 28,
                   ),
                 ),
-                child: const Text(
+                const SizedBox(height: 16),
+                Text(
                   'Logout',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: _textPrimary,
+                    fontSize: 20,
                     fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
                   ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  'Are you sure you want to logout?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _textSecondary,
+                    fontSize: 15,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: _textSecondary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _performLogout();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _errorColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Logout',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );

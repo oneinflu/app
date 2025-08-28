@@ -18,7 +18,9 @@ import 'package:influnew/widgets/pages/orders_page.dart';
 import 'package:influnew/widgets/pages/partner_benefits_screen.dart';
 import 'package:influnew/widgets/pages/product_detail_page.dart';
 import 'package:influnew/widgets/pages/profile_management_screen.dart';
+import 'package:influnew/widgets/pages/refer_and_grow.dart';
 import 'package:influnew/widgets/pages/store_benefits_screen.dart';
+import 'package:influnew/widgets/pages/earn_hub_screen.dart';
 import 'app_theme.dart';
 import 'widgets/pages/for_you_page.dart';
 
@@ -487,7 +489,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildReferralCard() {
     return GestureDetector(
       onTap: () {
-        // Add referral action here
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ReferAndGrowScreen()),
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -608,9 +613,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const EarningsScreen(fromBottomNav: false),
-          ),
+          MaterialPageRoute(builder: (context) => const EarnHubScreen()),
         );
       },
       child: Container(

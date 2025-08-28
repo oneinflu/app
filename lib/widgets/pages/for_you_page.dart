@@ -4,6 +4,7 @@ import 'package:influnew/widgets/pages/collabs_categories_page.dart';
 import 'package:influnew/widgets/pages/discover_business_screen.dart';
 import 'package:influnew/widgets/pages/discover_influencers_screen.dart';
 import 'package:influnew/widgets/pages/find_courses_screen.dart';
+import 'package:influnew/widgets/pages/partner_benefits_screen.dart';
 import 'package:influnew/widgets/pages/profile_management_screen.dart';
 import 'package:influnew/widgets/pages/shop_products_screen.dart';
 import 'package:influnew/widgets/pages/store_benefits_screen.dart';
@@ -230,15 +231,16 @@ class _ForYouPageState extends State<ForYouPage> with TickerProviderStateMixin {
             ),
             Icons.store,
           ),
+
           _buildSlideItem(
-            'Join Collaborations',
-            'Connect with brands and other creators',
+            'Create Online Course',
+            'Start teaching and share your knowledge',
             LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [AppTheme.accentCoral, AppTheme.primaryColor],
             ),
-            Icons.handshake,
+            Icons.school,
           ),
         ],
       ),
@@ -298,26 +300,36 @@ class _ForYouPageState extends State<ForYouPage> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 8), // Reduced spacing before button
           ElevatedButton(
-            onPressed: () {},
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) =>
+                            _currentSlide == 0
+                                ? const PartnerBenefitsScreen()
+                                : _currentSlide == 1
+                                ? const StoreBenefitsScreen()
+                                : const ChannelBenefitsScreen(),
+                  ),
+                ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: AppTheme.primaryColor,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ), // Reduced padding
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
               elevation: 0,
-              minimumSize: const Size(0, 32), // Set minimum button height
+              minimumSize: const Size(0, 32),
             ),
-            child: const Text(
-              'Get Started',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13, // Reduced font size
-              ),
+            child: Text(
+              _currentSlide == 0
+                  ? 'Get Started'
+                  : _currentSlide == 1
+                  ? 'Get Started'
+                  : 'Get Started',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
           ),
         ],
@@ -363,15 +375,35 @@ class _ForYouPageState extends State<ForYouPage> with TickerProviderStateMixin {
           children: [
             Expanded(
               child: _buildActionCard(
-                'Hire Influencers',
-                Icons.star,
+                'Post Property',
+                Icons.home,
+                AppTheme.accentMint,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionCard(
+                'Manage Store',
+                Icons.store,
+                AppTheme.primaryColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                'Manage Services',
+                Icons.miscellaneous_services,
                 AppTheme.accentYellow,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
-                'Collaborate',
+                'Collab',
                 Icons.handshake,
                 AppTheme.accentCoral,
               ),
@@ -406,9 +438,9 @@ class _ForYouPageState extends State<ForYouPage> with TickerProviderStateMixin {
             const SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
-                'Book Services',
-                Icons.people,
-                AppTheme.accentMint,
+                'Hire Influencers',
+                Icons.star,
+                AppTheme.accentYellow,
               ),
             ),
           ],
@@ -418,14 +450,18 @@ class _ForYouPageState extends State<ForYouPage> with TickerProviderStateMixin {
           children: [
             Expanded(
               child: _buildActionCard(
-                'Find Courses',
-                Icons.school,
-                AppTheme.accentYellow,
+                'Book Services',
+                Icons.people,
+                AppTheme.accentMint,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Container(), // Empty space for balance
+              child: _buildActionCard(
+                'Find Courses',
+                Icons.school,
+                AppTheme.accentYellow,
+              ),
             ),
           ],
         ),

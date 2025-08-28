@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:influnew/policy_page.dart';
+import 'package:influnew/terms_page.dart';
 import '../../app_theme.dart';
 
 class PrivacySecurityScreen extends StatefulWidget {
@@ -9,6 +11,15 @@ class PrivacySecurityScreen extends StatefulWidget {
 }
 
 class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
+  final Color _cardColor = Colors.white;
+  final Color _backgroundColor = Colors.grey.shade50;
+  final Color _textPrimary = Colors.grey.shade900;
+  final Color _textSecondary = Colors.grey.shade600;
+  final Color _primaryColor = AppTheme.primaryPurple;
+  final Color _accentColor = AppTheme.gradientEnd;
+  final Color _warningColor = Colors.orange;
+  final Color _errorColor = Colors.red.shade600;
+
   bool _twoFactorEnabled = false;
   bool _biometricEnabled = true;
   bool _locationEnabled = true;
@@ -20,162 +31,117 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: AppTheme.primaryPurple,
-        elevation: 0,
-        title: const Text(
-          'Privacy & Security',
-          style: TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
+      backgroundColor: _backgroundColor,
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-              decoration: const BoxDecoration(
-                color: AppTheme.primaryPurple,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
+            _buildCleanHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildCleanSection('Security', [
+                        _buildCleanToggleItem(
+                          'Biometric Login',
+                          Icons.fingerprint_rounded,
+                          const Color(0xFF805AD5),
+                          _biometricEnabled,
+                          (value) => setState(() => _biometricEnabled = value),
+                        ),
+                      ]),
+                      const SizedBox(height: 20),
+                      _buildCleanSection('Privacy', [
+                        _buildCleanToggleItem(
+                          'Location Services',
+                          Icons.location_on_rounded,
+                          const Color(0xFF38B2AC),
+                          _locationEnabled,
+                          (value) => setState(() => _locationEnabled = value),
+                        ),
+                        _buildCleanToggleItem(
+                          'Push Notifications',
+                          Icons.notifications_rounded,
+                          const Color(0xFFD69E2E),
+                          _notificationsEnabled,
+                          (value) =>
+                              setState(() => _notificationsEnabled = value),
+                        ),
+                        _buildCleanToggleItem(
+                          'Data Sharing',
+                          Icons.data_usage_rounded,
+                          const Color(0xFF3182CE),
+                          _dataSharing,
+                          (value) => setState(() => _dataSharing = value),
+                        ),
+                        _buildCleanToggleItem(
+                          'Activity Status',
+                          Icons.visibility_rounded,
+                          const Color(0xFF4299E1),
+                          _activityStatus,
+                          (value) => setState(() => _activityStatus = value),
+                        ),
+                        _buildCleanToggleItem(
+                          'Profile Visibility',
+                          Icons.person_rounded,
+                          const Color(0xFF9F7AEA),
+                          _profileVisibility,
+                          (value) => setState(() => _profileVisibility = value),
+                        ),
+                      ]),
+                      const SizedBox(height: 20),
+                      _buildCleanSection('Account', [
+                        _buildCleanMenuItem(
+                          'Download My Data',
+                          Icons.download_rounded,
+                          _textSecondary,
+                          () => _showDownloadDataDialog(),
+                        ),
+                        _buildCleanMenuItem(
+                          'Delete Account',
+                          Icons.delete_forever_rounded,
+                          _errorColor,
+                          () => _showDeleteAccountDialog(),
+                        ),
+                      ]),
+                      const SizedBox(height: 20),
+                      _buildCleanSection('Legal', [
+                        _buildCleanMenuItem(
+                          'Privacy Policy',
+                          Icons.privacy_tip_rounded,
+                          _textSecondary,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PolicyPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildCleanMenuItem(
+                          'Terms of Service',
+                          Icons.description_rounded,
+                          _textSecondary,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const TermsPage(),
+                              ),
+                            );
+                          },
+                        ),
+                      ]),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
                 ),
-              ),
-              child: const Text(
-                'Manage your account security and privacy settings',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  _buildSectionTitle('Security'),
-                  const SizedBox(height: 16),
-                  _buildSecurityItem(
-                    'Change Password',
-                    'Last changed 30 days ago',
-                    Icons.lock,
-                    onTap: () {
-                      _showChangePasswordDialog();
-                    },
-                  ),
-                  _buildToggleItem(
-                    'Two-Factor Authentication',
-                    'Add an extra layer of security',
-                    Icons.security,
-                    _twoFactorEnabled,
-                    (value) {
-                      setState(() {
-                        _twoFactorEnabled = value;
-                      });
-                      if (value) {
-                        _showTwoFactorDialog();
-                      }
-                    },
-                  ),
-                  _buildToggleItem(
-                    'Biometric Login',
-                    'Use fingerprint or face recognition',
-                    Icons.fingerprint,
-                    _biometricEnabled,
-                    (value) {
-                      setState(() {
-                        _biometricEnabled = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('Privacy'),
-                  const SizedBox(height: 16),
-                  _buildToggleItem(
-                    'Location Services',
-                    'Allow app to access your location',
-                    Icons.location_on,
-                    _locationEnabled,
-                    (value) {
-                      setState(() {
-                        _locationEnabled = value;
-                      });
-                    },
-                  ),
-                  _buildToggleItem(
-                    'Push Notifications',
-                    'Receive updates and alerts',
-                    Icons.notifications,
-                    _notificationsEnabled,
-                    (value) {
-                      setState(() {
-                        _notificationsEnabled = value;
-                      });
-                    },
-                  ),
-                  _buildToggleItem(
-                    'Data Sharing',
-                    'Share usage data to improve services',
-                    Icons.data_usage,
-                    _dataSharing,
-                    (value) {
-                      setState(() {
-                        _dataSharing = value;
-                      });
-                    },
-                  ),
-                  _buildToggleItem(
-                    'Activity Status',
-                    'Show when you are active on the platform',
-                    Icons.visibility,
-                    _activityStatus,
-                    (value) {
-                      setState(() {
-                        _activityStatus = value;
-                      });
-                    },
-                  ),
-                  _buildToggleItem(
-                    'Profile Visibility',
-                    'Allow others to discover your profile',
-                    Icons.person,
-                    _profileVisibility,
-                    (value) {
-                      setState(() {
-                        _profileVisibility = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('Account'),
-                  const SizedBox(height: 16),
-                  _buildSecurityItem(
-                    'Download My Data',
-                    'Get a copy of your personal data',
-                    Icons.download,
-                    onTap: () {
-                      _showDownloadDataDialog();
-                    },
-                  ),
-                  _buildSecurityItem(
-                    'Delete Account',
-                    'Permanently delete your account and data',
-                    Icons.delete_forever,
-                    textColor: Colors.red,
-                    onTap: () {
-                      _showDeleteAccountDialog();
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  _buildPrivacyPolicyLink(),
-                  const SizedBox(height: 16),
-                  _buildTermsOfServiceLink(),
-                ],
               ),
             ),
           ],
@@ -184,284 +150,167 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppTheme.primaryPurple,
-      ),
-    );
-  }
-
-  Widget _buildSecurityItem(
-    String title,
-    String subtitle,
-    IconData icon, {
-    required VoidCallback onTap,
-    Color? textColor,
-  }) {
+  Widget _buildCleanHeader() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: _cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppTheme.primaryPurple.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: _backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(
+                Icons.arrow_back_ios_rounded,
+                color: _textPrimary,
+                size: 18,
+              ),
+            ),
           ),
-          child: Icon(icon, color: AppTheme.primaryPurple),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
+          const Spacer(),
+          Text(
+            'Privacy & Security',
+            style: TextStyle(
+              color: _textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const Spacer(),
+          SizedBox(width: 48), // Balance the back button
+        ],
       ),
     );
   }
 
-  Widget _buildToggleItem(
+  Widget _buildCleanSection(String title, List<Widget> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: _textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: _cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade100),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(children: items),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCleanMenuItem(
     String title,
-    String subtitle,
     IconData icon,
+    Color accentColor,
+    VoidCallback onTap,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: accentColor, size: 18),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: _textPrimary,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.2,
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios_rounded,
+          color: _textSecondary,
+          size: 14,
+        ),
+        onTap: onTap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        hoverColor: Colors.grey.shade50,
+        splashColor: accentColor.withOpacity(0.1),
+      ),
+    );
+  }
+
+  Widget _buildCleanToggleItem(
+    String title,
+    IconData icon,
+    Color accentColor,
     bool value,
     Function(bool) onChanged,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Container(
-          width: 48,
-          height: 48,
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryPurple.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: accentColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: AppTheme.primaryPurple),
+          child: Icon(icon, color: accentColor, size: 18),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: _textPrimary,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.2,
+          ),
         ),
         trailing: Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: AppTheme.primaryPurple,
+          activeColor: _primaryColor,
         ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        hoverColor: Colors.grey.shade50,
       ),
-    );
-  }
-
-  Widget _buildPrivacyPolicyLink() {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to privacy policy
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.privacy_tip_outlined,
-              color: AppTheme.primaryPurple,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Privacy Policy',
-              style: TextStyle(
-                color: AppTheme.primaryPurple,
-                fontWeight: FontWeight.w500,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTermsOfServiceLink() {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to terms of service
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.description_outlined,
-              color: AppTheme.primaryPurple,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Terms of Service',
-              style: TextStyle(
-                color: AppTheme.primaryPurple,
-                fontWeight: FontWeight.w500,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showChangePasswordDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Change Password'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Current Password',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'New Password',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm New Password',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // Implement password change logic
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Password changed successfully'),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryPurple,
-                ),
-                child: const Text('Change'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _showTwoFactorDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Two-Factor Authentication'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'We will send a verification code to your registered mobile number each time you log in.',
-                  style: TextStyle(fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: 'Verify Mobile Number',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _twoFactorEnabled = false;
-                  });
-                  Navigator.pop(context);
-                },
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // Implement 2FA setup logic
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Two-factor authentication enabled'),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryPurple,
-                ),
-                child: const Text('Enable'),
-              ),
-            ],
-          ),
     );
   }
 
@@ -504,42 +353,133 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: const Text('Delete Account'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'This action cannot be undone. All your data will be permanently deleted.',
-                  style: TextStyle(color: Colors.red),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Enter your password to confirm',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _errorColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.delete_forever_rounded,
+                          color: _errorColor,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Delete Account',
+                        style: TextStyle(
+                          color: _textPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'This action cannot be undone. All your data will be permanently deleted.',
+                    style: TextStyle(
+                      color: _textSecondary,
+                      fontSize: 14,
+                      height: 1.5,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _backgroundColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: TextField(
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        hintText: 'Enter your password to confirm',
+                        hintStyle: TextStyle(
+                          color: _textSecondary,
+                          fontSize: 14,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: _textSecondary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Implement account deletion logic
+                            Navigator.pop(context);
+                            Navigator.of(
+                              context,
+                            ).popUntil((route) => route.isFirst);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _errorColor,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Delete',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // Implement account deletion logic
-                  Navigator.pop(context);
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('Delete Permanently'),
-              ),
-            ],
           ),
     );
   }
